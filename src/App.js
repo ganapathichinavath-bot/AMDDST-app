@@ -1,24 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import SplashScreen from './components/SplashScreen';
+import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
+import ChatPage from './components/ChatPage';
+import './index.css';
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) return <SplashScreen />;
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={
+          <LoginPage onLogin={() => setIsLoggedIn(true)} />
+        } />
+        <Route path="/chat" element={
+          isLoggedIn
+            ? <ChatPage />
+            : <ChatPage />
+        } />
+      </Routes>
+    </Router>
   );
 }
 
