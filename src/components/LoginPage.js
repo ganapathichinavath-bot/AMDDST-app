@@ -9,32 +9,46 @@ function LoginPage({ onLogin }) {
   const [activeTab, setActiveTab] = useState('password');
 
   const handleSubmit = (e) => {
-  e.preventDefault();
-  localStorage.setItem('amddst_user', JSON.stringify({
-    username: form.username || form.phone,
-    loginTime: new Date().toISOString()
-  }));
-  onLogin();
-  navigate('/chat');
-};
+    e.preventDefault();
+    localStorage.setItem('amddst_user', JSON.stringify({
+      username: form.username || form.phone,
+      loginTime: new Date().toISOString()
+    }));
+    onLogin();
+    navigate('/chat');
+  };
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 20,
+      background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'center', padding: 20,
+      position: 'relative', overflow: 'hidden',
     }}>
+      {/* Background blobs */}
+      <div style={{
+        position: 'absolute', width: 400, height: 400,
+        borderRadius: '50%', top: -100, left: -100,
+        background: 'radial-gradient(circle, rgba(102,126,234,0.3) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', width: 300, height: 300,
+        borderRadius: '50%', bottom: -50, right: -50,
+        background: 'radial-gradient(circle, rgba(240,147,251,0.3) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+
       <motion.div
         style={{
-          background: 'white',
-          borderRadius: 24,
-          padding: '40px',
-          width: '100%',
-          maxWidth: 420,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+          background: 'rgba(255,255,255,0.07)',
+          backdropFilter: 'blur(30px)',
+          borderRadius: 24, padding: '45px 40px',
+          width: '100%', maxWidth: 420,
+          border: '1px solid rgba(255,255,255,0.15)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+          position: 'relative', zIndex: 1,
         }}
         initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -42,75 +56,72 @@ function LoginPage({ onLogin }) {
       >
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <div style={{ fontSize: 50, marginBottom: 10 }}>🎯</div>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#1e293b' }}>
+          <div style={{
+            width: 65, height: 65, borderRadius: 18,
+            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 30,
+            margin: '0 auto 15px',
+            boxShadow: '0 8px 25px rgba(102,126,234,0.4)',
+          }}>🎯</div>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: 'white' }}>
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <p style={{ color: '#64748b', marginTop: 5 }}>
-            {mode === 'login' ? 'Sign in to continue' : 'Join AMDDST today'}
+          <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: 6, fontSize: 14 }}>
+            {mode === 'login' ? 'Sign in to continue your journey' : 'Join AMDDST today'}
           </p>
         </div>
 
-        {/* Google Auth Button */}
+        {/* Google button */}
         <motion.button
           style={{
-            width: '100%',
-            padding: '12px',
-            border: '2px solid #e2e8f0',
+            width: '100%', padding: '12px',
+            border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: 12,
-            background: 'white',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: 'pointer',
-            marginBottom: 20,
-            color: '#1e293b',
+            background: 'rgba(255,255,255,0.08)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', gap: 10,
+            fontSize: 14, fontWeight: 600,
+            cursor: 'pointer', marginBottom: 20,
+            color: 'white',
           }}
-          whileHover={{ bg: '#f8fafc', scale: 1.01 }}
+          whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
         >
-          <span style={{ fontSize: 20 }}>G</span>
+          <span style={{
+            width: 20, height: 20, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #4285f4, #34a853, #fbbc05, #ea4335)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 11,
+            fontWeight: 900, color: 'white',
+          }}>G</span>
           Continue with Google
         </motion.button>
 
         {/* Divider */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 20,
-        }}>
-          <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
-          <span style={{ color: '#94a3b8', fontSize: 13 }}>or continue with</span>
-          <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>or continue with</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.1)' }} />
         </div>
 
         {/* Tabs */}
         <div style={{
           display: 'flex',
-          background: '#f1f5f9',
-          borderRadius: 10,
-          padding: 4,
-          marginBottom: 20,
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: 10, padding: 4, marginBottom: 20,
         }}>
           {['password', 'phone'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
-                flex: 1,
-                padding: '8px',
-                border: 'none',
-                borderRadius: 8,
-                background: activeTab === tab ? 'white' : 'transparent',
-                color: activeTab === tab ? '#2563eb' : '#64748b',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontSize: 13,
-                boxShadow: activeTab === tab ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
+                flex: 1, padding: '8px', border: 'none', borderRadius: 8,
+                background: activeTab === tab
+                  ? 'linear-gradient(135deg, #667eea, #764ba2)'
+                  : 'transparent',
+                color: 'white', fontWeight: 600,
+                cursor: 'pointer', fontSize: 13,
                 transition: 'all 0.2s',
               }}
             >
@@ -124,101 +135,82 @@ function LoginPage({ onLogin }) {
           {activeTab === 'password' ? (
             <>
               <input
-                type="text"
-                placeholder="Username or Email"
+                type="text" placeholder="Username or Email"
                 value={form.username}
                 onChange={e => setForm({ ...form, username: e.target.value })}
                 style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: 10,
-                  fontSize: 15,
-                  marginBottom: 12,
-                  outline: 'none',
-                  transition: 'border 0.2s',
+                  width: '100%', padding: '13px 16px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10, fontSize: 14,
+                  marginBottom: 12, outline: 'none', color: 'white',
                 }}
-                onFocus={e => e.target.style.borderColor = '#2563eb'}
-                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                onFocus={e => e.target.style.borderColor = '#667eea'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
               />
               <input
-                type="password"
-                placeholder="Password"
+                type="password" placeholder="Password"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
                 style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: 10,
-                  fontSize: 15,
-                  marginBottom: 20,
-                  outline: 'none',
+                  width: '100%', padding: '13px 16px',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10, fontSize: 14,
+                  marginBottom: 20, outline: 'none', color: 'white',
                 }}
-                onFocus={e => e.target.style.borderColor = '#2563eb'}
-                onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                onFocus={e => e.target.style.borderColor = '#667eea'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
               />
             </>
           ) : (
             <input
-              type="tel"
-              placeholder="Phone Number"
+              type="tel" placeholder="Phone Number"
               value={form.phone}
               onChange={e => setForm({ ...form, phone: e.target.value })}
               style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e2e8f0',
-                borderRadius: 10,
-                fontSize: 15,
-                marginBottom: 20,
-                outline: 'none',
+                width: '100%', padding: '13px 16px',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 10, fontSize: 14,
+                marginBottom: 20, outline: 'none', color: 'white',
               }}
-              onFocus={e => e.target.style.borderColor = '#2563eb'}
-              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              onFocus={e => e.target.style.borderColor = '#667eea'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
             />
           )}
 
           <motion.button
             type="submit"
             style={{
-              width: '100%',
-              padding: '13px',
-              background: '#2563eb',
-              color: 'white',
-              border: 'none',
-              borderRadius: 12,
-              fontSize: 16,
-              fontWeight: 700,
-              cursor: 'pointer',
+              width: '100%', padding: '13px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white', border: 'none', borderRadius: 12,
+              fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(102,126,234,0.4)',
             }}
-            whileHover={{ scale: 1.02, background: '#1d4ed8' }}
+            whileHover={{ scale: 1.02, boxShadow: '0 12px 30px rgba(102,126,234,0.5)' }}
             whileTap={{ scale: 0.98 }}
           >
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
+            {mode === 'login' ? 'Sign In ✨' : 'Create Account ✨'}
           </motion.button>
         </form>
 
-        {/* Toggle mode */}
-        <p style={{ textAlign: 'center', marginTop: 20, color: '#64748b', fontSize: 14 }}>
+        <p style={{ textAlign: 'center', marginTop: 20, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
           {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
           <span
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-            style={{ color: '#2563eb', fontWeight: 600, cursor: 'pointer' }}
+            style={{ color: '#a78bfa', fontWeight: 600, cursor: 'pointer' }}
           >
             {mode === 'login' ? 'Sign Up' : 'Sign In'}
           </span>
         </p>
 
-        {/* Back */}
         <p
           onClick={() => navigate('/')}
           style={{
-            textAlign: 'center',
-            marginTop: 10,
-            color: '#94a3b8',
-            fontSize: 13,
-            cursor: 'pointer',
+            textAlign: 'center', marginTop: 10,
+            color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer',
           }}
         >
           ← Back to Home

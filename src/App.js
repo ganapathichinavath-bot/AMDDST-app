@@ -24,11 +24,7 @@ function App() {
         <Route path="/login" element={
           <LoginPage onLogin={() => setIsLoggedIn(true)} />
         } />
-        <Route path="/chat" element={
-          isLoggedIn
-            ? <ChatPage />
-            : <ChatPage />
-        } />
+        <Route path="/chat" element={<ChatPage />} />
       </Routes>
     </Router>
   );

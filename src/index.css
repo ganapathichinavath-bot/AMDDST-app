@@ -6,20 +6,33 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f0f4ff;
+  background: #0f0c29;
   color: #1a1a2e;
 }
 
 :root {
-  --primary: #2563eb;
-  --primary-light: #3b82f6;
-  --primary-dark: #1d4ed8;
-  --secondary: #eff6ff;
-  --accent: #60a5fa;
-  --white: #ffffff;
-  --text-dark: #1e293b;
-  --text-light: #64748b;
-  --border: #e2e8f0;
-  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --grad1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --grad2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --grad3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --grad4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --grad5: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --dark: #0f0c29;
+  --dark2: #1a1744;
+  --card: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.15);
+  --text: #ffffff;
+  --text-muted: rgba(255, 255, 255, 0.6);
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
 }
