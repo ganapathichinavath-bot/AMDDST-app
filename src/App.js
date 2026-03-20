@@ -8,6 +8,7 @@ import './index.css';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
+  // eslint-disable-next-line no-unused-vars
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
