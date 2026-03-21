@@ -1,12 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 
-function LandingPage() {
+function LandingPage(props) {
   const navigate = useNavigate();
 
   const features = [
-    { icon: '🎙️', title: 'Voice Input', desc: 'Speak naturally, AI understands you', grad: 'linear-gradient(135deg, #667eea, #764ba2)' },
+    { icon: '🎙️', title: 'Voice Input', desc: 'Speak naturally and let AI track your needs', grad: 'linear-gradient(135deg, #667eea, #764ba2)' },
     { icon: '💬', title: 'Smart Chat', desc: 'Natural language conversation', grad: 'linear-gradient(135deg, #f093fb, #f5576c)' },
     { icon: '🏨', title: 'Hotel Booking', desc: 'Find perfect hotels instantly', grad: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
     { icon: '🍽️', title: 'Restaurants', desc: 'Discover best dining spots', grad: 'linear-gradient(135deg, #43e97b, #38f9d7)' },
@@ -20,6 +22,14 @@ function LandingPage() {
     { value: '3rd', label: 'DSTC10 Place' },
     { value: '0.12', label: 'Final Loss' },
   ];
+
+  const userName = props.user?.displayName || props.user?.email?.split('@')[0] || '';
+  const userInitial = userName ? userName[0].toUpperCase() : '';
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    localStorage.removeItem('amddst_user');
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' }}>
@@ -43,44 +53,101 @@ function LandingPage() {
           <div style={{
             width: 38, height: 38, borderRadius: 10,
             background: 'linear-gradient(135deg, #667eea, #764ba2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
           }}>🎯</div>
           <span style={{
             fontSize: 22, fontWeight: 900,
             background: 'linear-gradient(135deg, #667eea, #f093fb)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
           }}>AMDDST</span>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <motion.button
-            onClick={() => navigate('/login')}
-            style={{
-              padding: '9px 22px',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: 10, background: 'transparent',
-              color: 'white', fontWeight: 600,
-              cursor: 'pointer', fontSize: 14,
-            }}
-            whileHover={{ background: 'rgba(255,255,255,0.1)', scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Login
-          </motion.button>
-          <motion.button
-            onClick={() => navigate('/chat')}
-            style={{
-              padding: '9px 22px', border: 'none', borderRadius: 10,
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 14,
-              boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
-            }}
-            whileHover={{ scale: 1.05, boxShadow: '0 8px 25px rgba(102,126,234,0.5)' }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Try Now 🚀
-          </motion.button>
+
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          {props.user ? (
+            <>
+              <motion.div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10, padding: '7px 14px',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigate('/chat')}
+                whileHover={{ background: 'rgba(255,255,255,0.12)' }}
+              >
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea, #f093fb)',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', color: 'white',
+                  fontWeight: 700, fontSize: 12,
+                }}>
+                  {userInitial}
+                </div>
+                <span style={{ color: 'white', fontSize: 13, fontWeight: 600 }}>
+                  {userName}
+                </span>
+              </motion.div>
+              <motion.button
+                onClick={() => navigate('/chat')}
+                style={{
+                  padding: '9px 22px', border: 'none', borderRadius: 10,
+                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+                  boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Go to Chat 🎯
+              </motion.button>
+              <motion.button
+                onClick={handleLogout}
+                style={{
+                  padding: '9px 16px',
+                  border: '1px solid rgba(245,87,108,0.4)',
+                  borderRadius: 10,
+                  background: 'rgba(245,87,108,0.1)',
+                  color: '#f5576c', fontWeight: 600,
+                  cursor: 'pointer', fontSize: 13,
+                }}
+                whileHover={{ background: 'rgba(245,87,108,0.2)', scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Logout
+              </motion.button>
+            </>
+          ) : (
+            <>
+              <motion.button
+                onClick={() => navigate('/login')}
+                style={{
+                  padding: '9px 22px',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: 10, background: 'transparent',
+                  color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+                }}
+                whileHover={{ background: 'rgba(255,255,255,0.1)', scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Login
+              </motion.button>
+              <motion.button
+                onClick={() => navigate('/chat')}
+                style={{
+                  padding: '9px 22px', border: 'none', borderRadius: 10,
+                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 14,
+                  boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Try Now 🚀
+              </motion.button>
+            </>
+          )}
         </div>
       </motion.nav>
 
@@ -106,6 +173,24 @@ function LandingPage() {
             🏆 DSTC10 Challenge — 3rd Place Globally
           </motion.div>
 
+          {props.user && (
+            <motion.div
+              style={{
+                display: 'inline-block', padding: '8px 20px',
+                background: 'rgba(67,233,123,0.15)',
+                border: '1px solid rgba(67,233,123,0.3)',
+                borderRadius: 20, color: '#43e97b',
+                fontSize: 14, fontWeight: 600,
+                marginBottom: 20, marginLeft: 10,
+              }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              👋 Welcome back, {userName}!
+            </motion.div>
+          )}
+
           <h1 style={{
             fontSize: 'clamp(32px, 6vw, 64px)',
             fontWeight: 900, lineHeight: 1.1,
@@ -115,8 +200,7 @@ function LandingPage() {
             <br />
             <span style={{
               background: 'linear-gradient(135deg, #667eea, #f093fb, #4facfe)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>
               Travel Assistant
             </span>
@@ -139,26 +223,28 @@ function LandingPage() {
                 fontSize: 16, fontWeight: 700, cursor: 'pointer',
                 boxShadow: '0 8px 30px rgba(102,126,234,0.5)',
               }}
-              whileHover={{ scale: 1.05, boxShadow: '0 12px 40px rgba(102,126,234,0.6)' }}
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              🚀 Start Chatting
+              {props.user ? '💬 Continue Chatting' : '🚀 Start Chatting'}
             </motion.button>
-            <motion.button
-              onClick={() => navigate('/login')}
-              style={{
-                padding: '15px 38px',
-                background: 'rgba(255,255,255,0.08)',
-                color: 'white',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer',
-                backdropFilter: 'blur(10px)',
-              }}
-              whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Create Account
-            </motion.button>
+            {!props.user && (
+              <motion.button
+                onClick={() => navigate('/login')}
+                style={{
+                  padding: '15px 38px',
+                  background: 'rgba(255,255,255,0.08)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer',
+                  backdropFilter: 'blur(10px)',
+                }}
+                whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Create Account
+              </motion.button>
+            )}
           </div>
         </motion.div>
       </div>
@@ -189,8 +275,7 @@ function LandingPage() {
               <p style={{
                 fontSize: 36, fontWeight: 900,
                 background: 'linear-gradient(135deg, #667eea, #f093fb)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>{stat.value}</p>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 5 }}>{stat.label}</p>
             </motion.div>
@@ -226,22 +311,20 @@ function LandingPage() {
                 background: 'rgba(255,255,255,0.05)',
                 borderRadius: 20, padding: '30px',
                 border: '1px solid rgba(255,255,255,0.1)',
-                backdropFilter: 'blur(10px)',
-                cursor: 'pointer',
+                backdropFilter: 'blur(10px)', cursor: 'pointer',
               }}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              whileHover={{ y: -8, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)' }}
+              whileHover={{ y: -8, background: 'rgba(255,255,255,0.08)' }}
             >
               <div style={{
                 width: 55, height: 55, borderRadius: 16,
                 background: feature.grad,
                 display: 'flex', alignItems: 'center',
                 justifyContent: 'center', fontSize: 26,
-                marginBottom: 18,
-                boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
+                marginBottom: 18, boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
               }}>
                 {feature.icon}
               </div>
@@ -270,10 +353,10 @@ function LandingPage() {
           viewport={{ once: true }}
         >
           <h2 style={{ fontSize: 32, fontWeight: 800, color: 'white', marginBottom: 15 }}>
-            Ready to get started?
+            {props.user ? `Ready to explore, ${userName}?` : 'Ready to get started?'}
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 30 }}>
-            Join thousands of travelers using AMDDST
+            {props.user ? 'Your AI travel assistant is waiting.' : 'Join thousands of travelers using AMDDST'}
           </p>
           <motion.button
             onClick={() => navigate('/chat')}
@@ -286,7 +369,7 @@ function LandingPage() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Start for Free 🎯
+            {props.user ? 'Go to Chat 🎯' : 'Start for Free 🎯'}
           </motion.button>
         </motion.div>
       </div>

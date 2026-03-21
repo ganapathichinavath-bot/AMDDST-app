@@ -1,21 +1,79 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup
+} from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db, googleProvider } from '../firebase';
 
 function LoginPage({ onLogin }) {
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
-  const [form, setForm] = useState({ username: '', password: '', phone: '' });
+  const [form, setForm] = useState({ email: '', password: '', phone: '' });
   const [activeTab, setActiveTab] = useState('password');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const saveUserToFirestore = async (user) => {
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || user.email,
+        createdAt: new Date().toISOString(),
+        conversations: [],
+        bookings: []
+      });
+    }
     localStorage.setItem('amddst_user', JSON.stringify({
-      username: form.username || form.phone,
-      loginTime: new Date().toISOString()
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || user.email,
     }));
-    onLogin();
-    navigate('/chat');
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      await saveUserToFirestore(result.user);
+      onLogin();
+      navigate('/chat');
+    } catch (err) {
+      setError('Google sign-in failed. Try again.');
+    }
+    setLoading(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      let result;
+      if (mode === 'login') {
+        result = await signInWithEmailAndPassword(auth, form.email, form.password);
+      } else {
+        result = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      }
+      await saveUserToFirestore(result.user);
+      onLogin();
+      navigate('/chat');
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') setError('No account found. Sign up first.');
+      else if (err.code === 'auth/wrong-password') setError('Wrong password. Try again.');
+      else if (err.code === 'auth/email-already-in-use') setError('Email already registered. Sign in instead.');
+      else if (err.code === 'auth/weak-password') setError('Password must be at least 6 characters.');
+      else if (err.code === 'auth/invalid-email') setError('Invalid email address.');
+      else setError('Something went wrong. Try again.');
+    }
+    setLoading(false);
   };
 
   return (
@@ -26,7 +84,6 @@ function LoginPage({ onLogin }) {
       justifyContent: 'center', padding: 20,
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Background blobs */}
       <div style={{
         position: 'absolute', width: 400, height: 400,
         borderRadius: '50%', top: -100, left: -100,
@@ -54,7 +111,6 @@ function LoginPage({ onLogin }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 30 }}>
           <div style={{
             width: 65, height: 65, borderRadius: 18,
@@ -72,8 +128,26 @@ function LoginPage({ onLogin }) {
           </p>
         </div>
 
+        {/* Error message */}
+        {error && (
+          <motion.div
+            style={{
+              background: 'rgba(245,87,108,0.2)',
+              border: '1px solid rgba(245,87,108,0.4)',
+              borderRadius: 10, padding: '10px 14px',
+              color: '#f5576c', fontSize: 13, marginBottom: 15,
+            }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            ⚠️ {error}
+          </motion.div>
+        )}
+
         {/* Google button */}
         <motion.button
+          onClick={handleGoogleLogin}
+          disabled={loading}
           style={{
             width: '100%', padding: '12px',
             border: '1px solid rgba(255,255,255,0.2)',
@@ -82,11 +156,12 @@ function LoginPage({ onLogin }) {
             display: 'flex', alignItems: 'center',
             justifyContent: 'center', gap: 10,
             fontSize: 14, fontWeight: 600,
-            cursor: 'pointer', marginBottom: 20,
-            color: 'white',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            marginBottom: 20, color: 'white',
+            opacity: loading ? 0.6 : 1,
           }}
-          whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
+          whileHover={!loading ? { background: 'rgba(255,255,255,0.15)', scale: 1.01 } : {}}
+          whileTap={!loading ? { scale: 0.99 } : {}}
         >
           <span style={{
             width: 20, height: 20, borderRadius: '50%',
@@ -135,9 +210,10 @@ function LoginPage({ onLogin }) {
           {activeTab === 'password' ? (
             <>
               <input
-                type="text" placeholder="Username or Email"
-                value={form.username}
-                onChange={e => setForm({ ...form, username: e.target.value })}
+                type="email" placeholder="Email address"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                required
                 style={{
                   width: '100%', padding: '13px 16px',
                   background: 'rgba(255,255,255,0.08)',
@@ -152,6 +228,7 @@ function LoginPage({ onLogin }) {
                 type="password" placeholder="Password"
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
+                required
                 style={{
                   width: '100%', padding: '13px 16px',
                   background: 'rgba(255,255,255,0.08)',
@@ -164,42 +241,40 @@ function LoginPage({ onLogin }) {
               />
             </>
           ) : (
-            <input
-              type="tel" placeholder="Phone Number"
-              value={form.phone}
-              onChange={e => setForm({ ...form, phone: e.target.value })}
-              style={{
-                width: '100%', padding: '13px 16px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 10, fontSize: 14,
-                marginBottom: 20, outline: 'none', color: 'white',
-              }}
-              onFocus={e => e.target.style.borderColor = '#667eea'}
-              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
-            />
+            <div style={{ marginBottom: 20 }}>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
+                📱 Phone authentication coming soon!
+                <br />Use email/password or Google for now.
+              </p>
+            </div>
           )}
 
-          <motion.button
-            type="submit"
-            style={{
-              width: '100%', padding: '13px',
-              background: 'linear-gradient(135deg, #667eea, #764ba2)',
-              color: 'white', border: 'none', borderRadius: 12,
-              fontSize: 15, fontWeight: 700, cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(102,126,234,0.4)',
-            }}
-            whileHover={{ scale: 1.02, boxShadow: '0 12px 30px rgba(102,126,234,0.5)' }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {mode === 'login' ? 'Sign In ✨' : 'Create Account ✨'}
-          </motion.button>
+          {activeTab === 'password' && (
+            <motion.button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%', padding: '13px',
+                background: loading
+                  ? 'rgba(102,126,234,0.5)'
+                  : 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: 'white', border: 'none', borderRadius: 12,
+                fontSize: 15, fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: loading ? 'none' : '0 8px 20px rgba(102,126,234,0.4)',
+              }}
+              whileHover={!loading ? { scale: 1.02 } : {}}
+              whileTap={!loading ? { scale: 0.98 } : {}}
+            >
+              {loading ? '⏳ Please wait...' : mode === 'login' ? 'Sign In ✨' : 'Create Account ✨'}
+            </motion.button>
+          )}
         </form>
 
         <p style={{ textAlign: 'center', marginTop: 20, color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
           {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
           <span
-            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
             style={{ color: '#a78bfa', fontWeight: 600, cursor: 'pointer' }}
           >
             {mode === 'login' ? 'Sign Up' : 'Sign In'}

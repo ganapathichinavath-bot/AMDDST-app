@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { collection, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { auth, db } from '../firebase';
 
-function ChatPage() {
+function ChatPage(props) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([
     {
@@ -17,14 +20,12 @@ function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
+  const [conversations, setConversations] = useState([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const conversations = [
-    { id: 1, title: 'Hotel in Cambridge', time: 'Yesterday', preview: 'Looking for cheap hotel...', icon: '🏨' },
-    { id: 2, title: 'Restaurant booking', time: '2 days ago', preview: 'Indian restaurant near...', icon: '🍽️' },
-    { id: 3, title: 'Museum visit', time: 'Last week', preview: 'Attractions in north...', icon: '🎭' },
-  ];
+  const userName = props.user?.displayName || props.user?.email?.split('@')[0] || 'User';
+  const userInitial = userName[0].toUpperCase();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,11 +39,59 @@ function ChatPage() {
     });
   }, []);
 
+  // Load past conversations
+  useEffect(() => {
+    const loadConversations = async () => {
+      if (!props.user) return;
+      try {
+        const q = query(
+          collection(db, 'conversations'),
+          where('uid', '==', props.user.uid),
+          orderBy('createdAt', 'desc'),
+          limit(10)
+        );
+        const snapshot = await getDocs(q);
+        const convs = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setConversations(convs);
+      } catch (err) {
+        console.error('Error loading conversations:', err);
+      }
+    };
+    loadConversations();
+  }, [props.user]);
+
+  const saveConversation = async (userMessage, botReply) => {
+    if (!props.user) return;
+    try {
+      const newConv = {
+        uid: props.user.uid,
+        title: userMessage.slice(0, 40),
+        preview: botReply.replace(/<[^>]*>/g, '').slice(0, 60),
+        userMessage,
+        botReply,
+        createdAt: new Date().toISOString(),
+      };
+      const docRef = await addDoc(collection(db, 'conversations'), newConv);
+      setConversations(prev => [{ id: docRef.id, ...newConv }, ...prev.slice(0, 9)]);
+    } catch (err) {
+      console.error('Error saving conversation:', err);
+    }
+  };
+
   const handleInstall = async () => {
     if (!installPrompt) return;
     installPrompt.prompt();
     const result = await installPrompt.userChoice;
     if (result.outcome === 'accepted') setShowInstall(false);
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    localStorage.removeItem('amddst_user');
+    navigate('/');
   };
 
   const sendMessage = async (text) => {
@@ -91,6 +140,8 @@ function ChatPage() {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
 
+      saveConversation(text, botReply);
+
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
@@ -125,12 +176,17 @@ function ChatPage() {
             exit={{ x: -280 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Sidebar Header */}
-            <div style={{
-              padding: '20px',
-              borderBottom: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
+            {/* Logo */}
+            <motion.div
+              onClick={() => navigate('/')}
+              style={{
+                padding: '20px',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', gap: 10,
+                cursor: 'pointer',
+              }}
+              whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+            >
               <div style={{
                 width: 36, height: 36, borderRadius: 10,
                 background: 'linear-gradient(135deg, #667eea, #764ba2)',
@@ -140,10 +196,9 @@ function ChatPage() {
               <span style={{
                 fontSize: 18, fontWeight: 900,
                 background: 'linear-gradient(135deg, #667eea, #f093fb)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>AMDDST</span>
-            </div>
+            </motion.div>
 
             {/* New Chat */}
             <div style={{ padding: '15px' }}>
@@ -160,7 +215,7 @@ function ChatPage() {
                   fontWeight: 600, cursor: 'pointer', fontSize: 14,
                   boxShadow: '0 4px 15px rgba(102,126,234,0.3)',
                 }}
-                whileHover={{ scale: 1.02, boxShadow: '0 6px 20px rgba(102,126,234,0.4)' }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 ✨ New Conversation
@@ -177,7 +232,7 @@ function ChatPage() {
               }}>
                 Recent Conversations
               </p>
-              {conversations.map(conv => (
+              {conversations.length > 0 ? conversations.map(conv => (
                 <motion.div
                   key={conv.id}
                   style={{
@@ -187,46 +242,68 @@ function ChatPage() {
                   }}
                   whileHover={{ background: 'rgba(255,255,255,0.08)' }}
                 >
-                  <span style={{ fontSize: 20, marginTop: 2 }}>{conv.icon}</span>
-                  <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'white', marginBottom: 2 }}>
+                  <span style={{ fontSize: 18, marginTop: 2 }}>💬</span>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{
+                      fontSize: 13, fontWeight: 600, color: 'white', marginBottom: 2,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
                       {conv.title}
                     </p>
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{conv.preview}</p>
-                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 3 }}>{conv.time}</p>
+                    <p style={{
+                      fontSize: 11, color: 'rgba(255,255,255,0.4)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {conv.preview}
+                    </p>
                   </div>
                 </motion.div>
-              ))}
+              )) : (
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '10px 4px' }}>
+                  No conversations yet. Start chatting!
+                </p>
+              )}
             </div>
 
-            {/* User Profile */}
+            {/* User Profile + Logout */}
             <div style={{
               padding: '15px',
               borderTop: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', gap: 10,
             }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea, #f093fb)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', color: 'white',
-                fontWeight: 700, fontSize: 15,
-              }}>G</div>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'white' }}>ganirathod</p>
-                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Free Plan</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea, #f093fb)',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', color: 'white',
+                  fontWeight: 700, fontSize: 15, flexShrink: 0,
+                }}>
+                  {userInitial}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontSize: 13, fontWeight: 600, color: 'white',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {userName}
+                  </p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Free Plan</p>
+                </div>
+                <motion.button
+                  onClick={handleLogout}
+                  style={{
+                    background: 'rgba(245,87,108,0.15)',
+                    border: '1px solid rgba(245,87,108,0.3)',
+                    borderRadius: 8, padding: '6px 10px',
+                    color: '#f5576c', cursor: 'pointer',
+                    fontSize: 11, fontWeight: 600, flexShrink: 0,
+                  }}
+                  whileHover={{ background: 'rgba(245,87,108,0.25)', scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Logout
+                </motion.button>
               </div>
-              <motion.button
-                onClick={() => navigate('/')}
-                style={{
-                  marginLeft: 'auto', background: 'none',
-                  border: 'none', color: 'rgba(255,255,255,0.3)',
-                  cursor: 'pointer', fontSize: 18,
-                }}
-                whileHover={{ color: 'rgba(255,255,255,0.7)', scale: 1.1 }}
-              >
-                ⚙️
-              </motion.button>
             </div>
           </motion.div>
         )}
@@ -247,13 +324,10 @@ function ChatPage() {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
               background: 'none', border: 'none',
-              color: 'rgba(255,255,255,0.6)',
-              cursor: 'pointer', fontSize: 20,
+              color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 20,
             }}
             whileHover={{ color: 'white', scale: 1.1 }}
-          >
-            ☰
-          </motion.button>
+          >☰</motion.button>
 
           <div style={{
             width: 38, height: 38, borderRadius: 12,
@@ -275,12 +349,10 @@ function ChatPage() {
             </div>
           </div>
 
-          {/* Install banner in header */}
           {showInstall && (
             <motion.div
               style={{
-                marginLeft: 'auto', display: 'flex',
-                alignItems: 'center', gap: 10,
+                marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10,
                 background: 'rgba(102,126,234,0.2)',
                 border: '1px solid rgba(102,126,234,0.3)',
                 borderRadius: 10, padding: '6px 12px',
@@ -292,20 +364,17 @@ function ChatPage() {
               <motion.button
                 onClick={handleInstall}
                 style={{
-                  padding: '4px 10px', background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  padding: '4px 10px',
+                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
                   color: 'white', border: 'none', borderRadius: 6,
                   fontSize: 11, fontWeight: 600, cursor: 'pointer',
                 }}
                 whileHover={{ scale: 1.05 }}
-              >
-                Install
-              </motion.button>
+              >Install</motion.button>
               <button
                 onClick={() => setShowInstall(false)}
                 style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 14 }}
-              >
-                ✕
-              </button>
+              >✕</button>
             </motion.div>
           )}
         </div>
@@ -341,14 +410,11 @@ function ChatPage() {
                 <div style={{ maxWidth: '72%' }}>
                   <div style={{
                     padding: '13px 17px',
-                    borderRadius: msg.role === 'user'
-                      ? '18px 18px 4px 18px'
-                      : '18px 18px 18px 4px',
+                    borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     background: msg.role === 'user'
                       ? 'linear-gradient(135deg, #667eea, #764ba2)'
                       : 'rgba(255,255,255,0.08)',
-                    color: 'white',
-                    fontSize: 14, lineHeight: 1.6,
+                    color: 'white', fontSize: 14, lineHeight: 1.6,
                     backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none',
                     border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,0.1)' : 'none',
                     boxShadow: msg.role === 'user'
@@ -362,12 +428,9 @@ function ChatPage() {
                     }} />
                   </div>
                   <p style={{
-                    fontSize: 10, color: 'rgba(255,255,255,0.3)',
-                    marginTop: 5,
+                    fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5,
                     textAlign: msg.role === 'user' ? 'right' : 'left',
-                  }}>
-                    {msg.time}
-                  </p>
+                  }}>{msg.time}</p>
                 </div>
 
                 {msg.role === 'user' && (
@@ -377,13 +440,12 @@ function ChatPage() {
                     display: 'flex', alignItems: 'center',
                     justifyContent: 'center', color: 'white',
                     fontWeight: 700, fontSize: 14, flexShrink: 0,
-                  }}>G</div>
+                  }}>{userInitial}</div>
                 )}
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {/* Loading */}
           {isLoading && (
             <motion.div
               style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}
@@ -393,19 +455,16 @@ function ChatPage() {
               <div style={{
                 width: 34, height: 34, borderRadius: 10,
                 background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
               }}>🎯</div>
               <div style={{
                 background: 'rgba(255,255,255,0.08)',
-                borderRadius: '18px 18px 18px 4px',
-                padding: '14px 18px',
+                borderRadius: '18px 18px 18px 4px', padding: '14px 18px',
                 border: '1px solid rgba(255,255,255,0.1)',
                 display: 'flex', gap: 5, alignItems: 'center',
               }}>
                 {[0, 1, 2].map(i => (
-                  <motion.div
-                    key={i}
+                  <motion.div key={i}
                     style={{
                       width: 7, height: 7, borderRadius: '50%',
                       background: 'linear-gradient(135deg, #667eea, #f093fb)',
@@ -427,11 +486,7 @@ function ChatPage() {
           backdropFilter: 'blur(20px)',
           borderTop: '1px solid rgba(255,255,255,0.08)',
         }}>
-          {/* Quick suggestions */}
-          <div style={{
-            display: 'flex', gap: 8, marginBottom: 12,
-            overflowX: 'auto', paddingBottom: 4,
-          }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
             {[
               { text: '🏨 Cheap hotel', query: 'I need a cheap hotel in the centre' },
               { text: '🍽️ Indian food', query: 'Find me an Indian restaurant' },
@@ -451,22 +506,13 @@ function ChatPage() {
                 }}
                 whileHover={{ background: 'rgba(102,126,234,0.25)', scale: 1.03 }}
                 whileTap={{ scale: 0.95 }}
-              >
-                {s.text}
-              </motion.button>
+              >{s.text}</motion.button>
             ))}
           </div>
 
-          {/* Input row */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
-              type="file" accept="audio/*"
-              ref={fileInputRef} style={{ display: 'none' }}
-              onChange={(e) => {
-                if (e.target.files[0]) {
-                  sendMessage(`[Audio: ${e.target.files[0].name}]`);
-                }
-              }}
+            <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }}
+              onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }}
             />
 
             <motion.button
@@ -476,15 +522,11 @@ function ChatPage() {
                 border: '1px solid rgba(255,255,255,0.15)',
                 background: 'rgba(255,255,255,0.08)',
                 cursor: 'pointer', fontSize: 18,
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', flexShrink: 0, color: 'white',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
               whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }}
               whileTap={{ scale: 0.9 }}
-              title="Upload audio"
-            >
-              📁
-            </motion.button>
+            >📁</motion.button>
 
             <motion.button
               onClick={() => {
@@ -498,10 +540,7 @@ function ChatPage() {
                 recognition.interimResults = false;
                 setIsRecording(true);
                 recognition.start();
-                recognition.onresult = (e) => {
-                  setIsRecording(false);
-                  sendMessage(e.results[0][0].transcript);
-                };
+                recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); };
                 recognition.onerror = () => setIsRecording(false);
                 recognition.onend = () => setIsRecording(false);
               }}
@@ -509,22 +548,14 @@ function ChatPage() {
                 width: 44, height: 44, borderRadius: 12,
                 border: '1px solid',
                 borderColor: isRecording ? '#f5576c' : 'rgba(255,255,255,0.15)',
-                background: isRecording
-                  ? 'rgba(245,87,108,0.2)'
-                  : 'rgba(255,255,255,0.08)',
+                background: isRecording ? 'rgba(245,87,108,0.2)' : 'rgba(255,255,255,0.08)',
                 cursor: 'pointer', fontSize: 18,
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
-              animate={isRecording ? {
-                boxShadow: ['0 0 0 0 rgba(245,87,108,0)', '0 0 0 10px rgba(245,87,108,0)'],
-              } : {}}
+              animate={isRecording ? { boxShadow: ['0 0 0 0 rgba(245,87,108,0)', '0 0 0 10px rgba(245,87,108,0)'] } : {}}
               transition={{ duration: 1, repeat: Infinity }}
               whileTap={{ scale: 0.9 }}
-              title="Voice input"
-            >
-              🎙️
-            </motion.button>
+            >🎙️</motion.button>
 
             <input
               type="text" value={input}
@@ -536,8 +567,7 @@ function ChatPage() {
                 background: 'rgba(255,255,255,0.08)',
                 border: '1px solid rgba(255,255,255,0.15)',
                 borderRadius: 14, fontSize: 14,
-                outline: 'none', color: 'white',
-                transition: 'border 0.2s',
+                outline: 'none', color: 'white', transition: 'border 0.2s',
               }}
               onFocus={e => e.target.style.borderColor = 'rgba(102,126,234,0.6)'}
               onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
@@ -547,20 +577,15 @@ function ChatPage() {
               onClick={() => sendMessage(input)}
               style={{
                 width: 44, height: 44, borderRadius: 12, border: 'none',
-                background: input.trim()
-                  ? 'linear-gradient(135deg, #667eea, #764ba2)'
-                  : 'rgba(255,255,255,0.08)',
+                background: input.trim() ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'rgba(255,255,255,0.08)',
                 cursor: input.trim() ? 'pointer' : 'default',
-                fontSize: 18, display: 'flex',
-                alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                transition: 'all 0.2s',
+                fontSize: 18, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s',
                 boxShadow: input.trim() ? '0 4px 15px rgba(102,126,234,0.4)' : 'none',
               }}
               whileHover={input.trim() ? { scale: 1.1 } : {}}
               whileTap={input.trim() ? { scale: 0.9 } : {}}
-            >
-              ➤
-            </motion.button>
+            >➤</motion.button>
           </div>
         </div>
       </div>
