@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-function SearchResults({ results, type }) {
+function SearchResults({ results, type, onSelect }) {
   if (!results || results.length === 0) return null;
 
   const getIcon = () => {
@@ -25,6 +25,12 @@ function SearchResults({ results, type }) {
     return '#a78bfa';
   };
 
+  const handleSelect = (item) => {
+  if (onSelect) {
+    onSelect(item, type);
+  }
+};
+
   return (
     <motion.div
       style={{ marginTop: 12 }}
@@ -44,6 +50,7 @@ function SearchResults({ results, type }) {
         {results.map((item, i) => (
           <motion.div
             key={i}
+            onClick={() => handleSelect(item)}
             style={{
               background: 'rgba(255,255,255,0.06)',
               borderRadius: 12, padding: '14px 16px',
@@ -53,7 +60,12 @@ function SearchResults({ results, type }) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            whileHover={{ background: 'rgba(255,255,255,0.1)', scale: 1.01 }}
+            whileHover={{
+              background: 'rgba(255,255,255,0.12)',
+              scale: 1.01,
+              border: '1px solid rgba(102,126,234,0.4)',
+            }}
+            whileTap={{ scale: 0.99 }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <div style={{
@@ -65,26 +77,42 @@ function SearchResults({ results, type }) {
                 {getIcon()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
-                    {item.name}
-                  </p>
-                  {item.pricerange && (
-                    <span style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: getPriceColor(item.pricerange),
-                      background: `${getPriceColor(item.pricerange)}20`,
-                      padding: '2px 8px', borderRadius: 10,
-                      textTransform: 'uppercase', letterSpacing: 0.5,
-                    }}>
-                      {item.pricerange}
-                    </span>
-                  )}
-                  {item.stars && (
-                    <span style={{ fontSize: 11, color: '#fee140' }}>
-                      {'⭐'.repeat(item.stars)}
-                    </span>
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
+                      {item.name}
+                    </p>
+                    {item.pricerange && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700,
+                        color: getPriceColor(item.pricerange),
+                        background: `${getPriceColor(item.pricerange)}20`,
+                        padding: '2px 8px', borderRadius: 10,
+                        textTransform: 'uppercase', letterSpacing: 0.5,
+                      }}>
+                        {item.pricerange}
+                      </span>
+                    )}
+                    {item.stars && (
+                      <span style={{ fontSize: 11, color: '#fee140' }}>
+                        {'⭐'.repeat(item.stars)}
+                      </span>
+                    )}
+                  </div>
+                  {/* Select button */}
+                  <motion.div
+                    style={{
+                      padding: '4px 10px',
+                      background: 'rgba(102,126,234,0.2)',
+                      border: '1px solid rgba(102,126,234,0.4)',
+                      borderRadius: 8, color: '#a78bfa',
+                      fontSize: 11, fontWeight: 600,
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                    }}
+                    whileHover={{ background: 'rgba(102,126,234,0.4)', color: 'white' }}
+                  >
+                    Select →
+                  </motion.div>
                 </div>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
                   📍 {item.address}

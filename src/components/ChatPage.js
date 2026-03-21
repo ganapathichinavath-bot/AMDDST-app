@@ -189,6 +189,20 @@ function ChatPage(props) {
     setIsLoading(false);
   };
 
+  const handleItemSelect = (item, type) => {
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: `✅ Great choice! You selected **${item.name}**\n\n📍 ${item.address}\n📞 ${item.phone || 'N/A'}\n💰 ${item.pricerange || 'N/A'}\n🗺️ ${item.area || 'N/A'}${item.stars ? `\n⭐ ${item.stars} stars` : ''}${item.food ? `\n🍴 ${item.food}` : ''}\n\nHow would you like to proceed?`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      actions: [
+        { label: '✅ Confirm Booking', query: `I want to confirm booking at ${item.name}, ${item.address}` },
+        { label: '📋 More Details', query: `Tell me more about ${item.name}` },
+        { label: '🔄 Find Alternatives', query: `Find alternatives to ${item.name}` },
+      ]
+    }]);
+    setSearchResults(null);
+  };
+
   return (
     <div style={{
       display: 'flex', height: '100vh',
@@ -232,7 +246,6 @@ function ChatPage(props) {
             exit={{ x: -280 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Logo */}
             <motion.div
               onClick={() => navigate('/')}
               style={{
@@ -256,7 +269,6 @@ function ChatPage(props) {
               }}>AMDDST</span>
             </motion.div>
 
-            {/* New Chat */}
             <div style={{ padding: '15px' }}>
               <motion.button
                 onClick={() => {
@@ -282,7 +294,6 @@ function ChatPage(props) {
               </motion.button>
             </div>
 
-            {/* Conversations */}
             <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto' }}>
               <p style={{
                 fontSize: 10, fontWeight: 700,
@@ -328,7 +339,6 @@ function ChatPage(props) {
               )}
             </div>
 
-            {/* User Profile */}
             <div style={{
               padding: '15px',
               borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -477,7 +487,6 @@ function ChatPage(props) {
             <ChatSkeleton />
           ) : (
             <>
-              {/* Guest banner */}
               {props.isGuest && (
                 <motion.div
                   style={{
@@ -536,6 +545,7 @@ function ChatPage(props) {
                           display: 'flex', alignItems: 'center',
                           justifyContent: 'center', fontSize: 16, flexShrink: 0,
                           boxShadow: '0 4px 12px rgba(102,126,234,0.4)',
+                          alignSelf: 'flex-start', marginTop: 4,
                         }}>🎯</div>
                       )}
 
@@ -559,6 +569,31 @@ function ChatPage(props) {
                               .replace(/\n/g, '<br/>')
                           }} />
                         </div>
+
+                        {/* Action buttons */}
+                        {msg.actions && (
+                          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                            {msg.actions.map((action, ai) => (
+                              <motion.button
+                                key={ai}
+                                onClick={() => sendMessage(action.query)}
+                                style={{
+                                  padding: '7px 14px',
+                                  background: 'rgba(102,126,234,0.15)',
+                                  border: '1px solid rgba(102,126,234,0.3)',
+                                  borderRadius: 20, fontSize: 12,
+                                  color: '#a78bfa', cursor: 'pointer',
+                                  fontWeight: 600, whiteSpace: 'nowrap',
+                                }}
+                                whileHover={{ background: 'rgba(102,126,234,0.3)', scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                {action.label}
+                              </motion.button>
+                            ))}
+                          </div>
+                        )}
+
                         <p style={{
                           fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5,
                           textAlign: msg.role === 'user' ? 'right' : 'left',
@@ -584,7 +619,11 @@ function ChatPage(props) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
                       >
-                        <SearchResults results={searchResults} type={searchType} />
+                        <SearchResults
+                          results={searchResults}
+                          type={searchType}
+                          onSelect={handleItemSelect}
+                        />
                       </motion.div>
                     )}
                   </React.Fragment>
@@ -633,7 +672,6 @@ function ChatPage(props) {
           backdropFilter: 'blur(20px)',
           borderTop: '1px solid rgba(255,255,255,0.08)',
         }}>
-          {/* Quick suggestions */}
           <div style={{
             display: 'flex', gap: 8, marginBottom: 10,
             overflowX: 'auto', paddingBottom: 4,
@@ -663,7 +701,6 @@ function ChatPage(props) {
             ))}
           </div>
 
-          {/* Main input row */}
           <div style={{
             display: 'flex', gap: 8, alignItems: 'center',
             background: 'rgba(255,255,255,0.07)',
@@ -779,7 +816,8 @@ function ChatPage(props) {
                   width: 36, height: 36, borderRadius: 10, border: 'none',
                   background: input.trim() ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent',
                   cursor: input.trim() ? 'pointer' : 'default',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', flexShrink: 0,
                   color: input.trim() ? 'white' : 'rgba(255,255,255,0.2)',
                   transition: 'all 0.2s',
                 }}
