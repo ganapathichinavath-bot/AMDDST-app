@@ -11,6 +11,8 @@ import ProfilePage from './components/ProfilePage';
 import BookingsPage from './components/BookingsPage';
 import ChatPage from './components/ChatPage';
 import './index.css';
+import NotFoundPage from './components/NotFoundPage';
+<Route path="*" element={<NotFoundPage />} />
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);

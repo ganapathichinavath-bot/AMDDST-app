@@ -8,6 +8,7 @@ import { FiMic, FiMicOff, FiPaperclip, FiSend, FiBookmark, FiUser } from 'react-
 import { MdHotel, MdRestaurant, MdAttractions } from 'react-icons/md';
 import { searchHotels, searchRestaurants, searchAttractions, parseSlots } from '../data/database';
 import SearchResults from './SearchResults';
+import { ChatSkeleton, ConversationSkeleton } from './SkeletonLoader';
 
 function ChatPage(props) {
   const navigate = useNavigate();
@@ -29,11 +30,17 @@ function ChatPage(props) {
   const [conversations, setConversations] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
   const [searchType, setSearchType] = useState('');
+  const [pageLoading, setPageLoading] = useState(true);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const userName = props.user?.displayName || props.user?.email?.split('@')[0] || 'Guest';
   const userInitial = userName[0].toUpperCase();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPageLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -151,7 +158,6 @@ function ChatPage(props) {
 
       saveConversation(text, botReply);
 
-      // Parse slots and search database
       const cleanReply = botReply.replace('Detected Dialogue State:\n', '').replace(/•\s/g, '');
       const slots = parseSlots(cleanReply);
       const hasHotel = Object.keys(slots).some(k => k.startsWith('hotel-'));
@@ -159,16 +165,13 @@ function ChatPage(props) {
       const hasAttraction = Object.keys(slots).some(k => k.startsWith('attraction-'));
 
       if (hasHotel) {
-        const results = searchHotels(slots);
-        setSearchResults(results);
+        setSearchResults(searchHotels(slots));
         setSearchType('hotel');
       } else if (hasRestaurant) {
-        const results = searchRestaurants(slots);
-        setSearchResults(results);
+        setSearchResults(searchRestaurants(slots));
         setSearchType('restaurant');
       } else if (hasAttraction) {
-        const results = searchAttractions(slots);
-        setSearchResults(results);
+        setSearchResults(searchAttractions(slots));
         setSearchType('attraction');
       } else {
         setSearchResults(null);
@@ -289,7 +292,9 @@ function ChatPage(props) {
               }}>
                 Recent Conversations
               </p>
-              {conversations.length > 0 ? conversations.map(conv => (
+              {pageLoading ? (
+                <ConversationSkeleton />
+              ) : conversations.length > 0 ? conversations.map(conv => (
                 <motion.div
                   key={conv.id}
                   style={{
@@ -468,150 +473,155 @@ function ChatPage(props) {
           flex: 1, overflowY: 'auto', padding: '20px',
           display: 'flex', flexDirection: 'column', gap: 16,
         }}>
-
-          {/* Guest banner */}
-          {props.isGuest && (
-            <motion.div
-              style={{
-                background: 'linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2))',
-                border: '1px solid rgba(102,126,234,0.3)',
-                borderRadius: 14, padding: '14px 18px',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', gap: 10,
-                flexWrap: 'wrap',
-              }}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div>
-                <p style={{ color: 'white', fontSize: 13, fontWeight: 600, marginBottom: 3 }}>
-                  👋 You're using AMDDST as a guest
-                </p>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
-                  Sign in to save your conversations and access history
-                </p>
-              </div>
-              <motion.button
-                onClick={() => navigate('/login')}
-                style={{
-                  padding: '8px 18px',
-                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                  color: 'white', border: 'none', borderRadius: 10,
-                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Sign In ✨
-              </motion.button>
-            </motion.div>
-          )}
-
-          <AnimatePresence>
-            {messages.map((msg, index) => (
-              <React.Fragment key={index}>
+          {pageLoading ? (
+            <ChatSkeleton />
+          ) : (
+            <>
+              {/* Guest banner */}
+              {props.isGuest && (
                 <motion.div
                   style={{
-                    display: 'flex',
-                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    alignItems: 'flex-end', gap: 10,
+                    background: 'linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2))',
+                    border: '1px solid rgba(102,126,234,0.3)',
+                    borderRadius: 14, padding: '14px 18px',
+                    display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between', gap: 10,
+                    flexWrap: 'wrap',
                   }}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
                 >
-                  {msg.role === 'assistant' && (
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 10,
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                      display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', fontSize: 16, flexShrink: 0,
-                      boxShadow: '0 4px 12px rgba(102,126,234,0.4)',
-                    }}>🎯</div>
-                  )}
-
-                  <div style={{ maxWidth: isMobile ? '85%' : '72%' }}>
-                    <div style={{
-                      padding: '13px 17px',
-                      borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                      background: msg.role === 'user'
-                        ? 'linear-gradient(135deg, #667eea, #764ba2)'
-                        : 'rgba(255,255,255,0.08)',
-                      color: 'white', fontSize: 14, lineHeight: 1.6,
-                      backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none',
-                      border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,0.1)' : 'none',
-                      boxShadow: msg.role === 'user'
-                        ? '0 4px 20px rgba(102,126,234,0.4)'
-                        : '0 4px 15px rgba(0,0,0,0.2)',
-                    }}>
-                      <span dangerouslySetInnerHTML={{
-                        __html: msg.content
-                          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                          .replace(/\n/g, '<br/>')
-                      }} />
-                    </div>
-                    <p style={{
-                      fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5,
-                      textAlign: msg.role === 'user' ? 'right' : 'left',
-                    }}>{msg.time}</p>
+                  <div>
+                    <p style={{ color: 'white', fontSize: 13, fontWeight: 600, marginBottom: 3 }}>
+                      👋 You're using AMDDST as a guest
+                    </p>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>
+                      Sign in to save your conversations and access history
+                    </p>
                   </div>
-
-                  {msg.role === 'user' && (
-                    <div style={{
-                      width: 34, height: 34, borderRadius: 10,
-                      background: 'linear-gradient(135deg, #f093fb, #f5576c)',
-                      display: 'flex', alignItems: 'center',
-                      justifyContent: 'center', color: 'white',
-                      fontWeight: 700, fontSize: 14, flexShrink: 0,
-                    }}>{userInitial}</div>
-                  )}
-                </motion.div>
-
-                {/* Search Results after last assistant message */}
-                {index === messages.length - 1 && msg.role === 'assistant' && searchResults && searchResults.length > 0 && (
-                  <motion.div
-                    style={{ paddingLeft: isMobile ? 0 : 44 }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <SearchResults results={searchResults} type={searchType} />
-                  </motion.div>
-                )}
-              </React.Fragment>
-            ))}
-          </AnimatePresence>
-
-          {isLoading && (
-            <motion.div
-              style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div style={{
-                width: 34, height: 34, borderRadius: 10,
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-              }}>🎯</div>
-              <div style={{
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: '18px 18px 18px 4px', padding: '14px 18px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', gap: 5, alignItems: 'center',
-              }}>
-                {[0, 1, 2].map(i => (
-                  <motion.div key={i}
+                  <motion.button
+                    onClick={() => navigate('/login')}
                     style={{
-                      width: 7, height: 7, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #667eea, #f093fb)',
+                      padding: '8px 18px',
+                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      color: 'white', border: 'none', borderRadius: 10,
+                      fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      whiteSpace: 'nowrap',
                     }}
-                    animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-                  />
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Sign In ✨
+                  </motion.button>
+                </motion.div>
+              )}
+
+              <AnimatePresence>
+                {messages.map((msg, index) => (
+                  <React.Fragment key={index}>
+                    <motion.div
+                      style={{
+                        display: 'flex',
+                        justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                        alignItems: 'flex-end', gap: 10,
+                      }}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {msg.role === 'assistant' && (
+                        <div style={{
+                          width: 34, height: 34, borderRadius: 10,
+                          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                          display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', fontSize: 16, flexShrink: 0,
+                          boxShadow: '0 4px 12px rgba(102,126,234,0.4)',
+                        }}>🎯</div>
+                      )}
+
+                      <div style={{ maxWidth: isMobile ? '85%' : '72%' }}>
+                        <div style={{
+                          padding: '13px 17px',
+                          borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                          background: msg.role === 'user'
+                            ? 'linear-gradient(135deg, #667eea, #764ba2)'
+                            : 'rgba(255,255,255,0.08)',
+                          color: 'white', fontSize: 14, lineHeight: 1.6,
+                          backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none',
+                          border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                          boxShadow: msg.role === 'user'
+                            ? '0 4px 20px rgba(102,126,234,0.4)'
+                            : '0 4px 15px rgba(0,0,0,0.2)',
+                        }}>
+                          <span dangerouslySetInnerHTML={{
+                            __html: msg.content
+                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                              .replace(/\n/g, '<br/>')
+                          }} />
+                        </div>
+                        <p style={{
+                          fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5,
+                          textAlign: msg.role === 'user' ? 'right' : 'left',
+                        }}>{msg.time}</p>
+                      </div>
+
+                      {msg.role === 'user' && (
+                        <div style={{
+                          width: 34, height: 34, borderRadius: 10,
+                          background: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                          display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', color: 'white',
+                          fontWeight: 700, fontSize: 14, flexShrink: 0,
+                        }}>{userInitial}</div>
+                      )}
+                    </motion.div>
+
+                    {/* Search Results */}
+                    {index === messages.length - 1 && msg.role === 'assistant' && searchResults && searchResults.length > 0 && (
+                      <motion.div
+                        style={{ paddingLeft: isMobile ? 0 : 44 }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <SearchResults results={searchResults} type={searchType} />
+                      </motion.div>
+                    )}
+                  </React.Fragment>
                 ))}
-              </div>
-            </motion.div>
+              </AnimatePresence>
+
+              {isLoading && (
+                <motion.div
+                  style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div style={{
+                    width: 34, height: 34, borderRadius: 10,
+                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+                  }}>🎯</div>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    borderRadius: '18px 18px 18px 4px', padding: '14px 18px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    display: 'flex', gap: 5, alignItems: 'center',
+                  }}>
+                    {[0, 1, 2].map(i => (
+                      <motion.div key={i}
+                        style={{
+                          width: 7, height: 7, borderRadius: '50%',
+                          background: 'linear-gradient(135deg, #667eea, #f093fb)',
+                        }}
+                        animate={{ y: [0, -8, 0], opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                      />
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </>
           )}
           <div ref={messagesEndRef} />
         </div>
@@ -664,7 +674,6 @@ function ChatPage(props) {
               onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }}
             />
 
-            {/* Left icons */}
             <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               <motion.button
                 onClick={() => fileInputRef.current.click()}
@@ -732,105 +741,45 @@ function ChatPage(props) {
 
             <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
-            {/* Right icons */}
             <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
               {!isMobile && (
                 <>
-                  <motion.button
-                    onClick={() => sendMessage('Show me available hotels')}
-                    title="Hotels"
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'transparent', border: 'none',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: 'rgba(255,255,255,0.4)',
-                    }}
-                    whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
+                  <motion.button onClick={() => sendMessage('Show me available hotels')} title="Hotels"
+                    style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}
+                    whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                     <MdHotel size={20} />
                   </motion.button>
-
-                  <motion.button
-                    onClick={() => sendMessage('Find me a restaurant')}
-                    title="Restaurants"
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'transparent', border: 'none',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: 'rgba(255,255,255,0.4)',
-                    }}
-                    whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
+                  <motion.button onClick={() => sendMessage('Find me a restaurant')} title="Restaurants"
+                    style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}
+                    whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                     <MdRestaurant size={20} />
                   </motion.button>
-
-                  <motion.button
-                    onClick={() => sendMessage('What attractions are nearby')}
-                    title="Attractions"
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'transparent', border: 'none',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: 'rgba(255,255,255,0.4)',
-                    }}
-                    whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
+                  <motion.button onClick={() => sendMessage('What attractions are nearby')} title="Attractions"
+                    style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}
+                    whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                     <MdAttractions size={20} />
                   </motion.button>
-
-                  <motion.button
-                    onClick={() => navigate('/bookings')}
-                    title="History"
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'transparent', border: 'none',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: 'rgba(255,255,255,0.4)',
-                    }}
-                    whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
+                  <motion.button onClick={() => navigate('/bookings')} title="History"
+                    style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}
+                    whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                     <FiBookmark size={18} />
                   </motion.button>
-
-                  <motion.button
-                    onClick={() => navigate('/profile')}
-                    title="Profile"
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'transparent', border: 'none',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: 'rgba(255,255,255,0.4)',
-                    }}
-                    whileHover={{ color: '#fa709a', background: 'rgba(250,112,154,0.1)', scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
+                  <motion.button onClick={() => navigate('/profile')} title="Profile"
+                    style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }}
+                    whileHover={{ color: '#fa709a', background: 'rgba(250,112,154,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}>
                     <FiUser size={18} />
                   </motion.button>
-
                   <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
                 </>
               )}
-
               <motion.button
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim()}
                 style={{
                   width: 36, height: 36, borderRadius: 10, border: 'none',
-                  background: input.trim()
-                    ? 'linear-gradient(135deg, #667eea, #764ba2)'
-                    : 'transparent',
+                  background: input.trim() ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'transparent',
                   cursor: input.trim() ? 'pointer' : 'default',
-                  display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                   color: input.trim() ? 'white' : 'rgba(255,255,255,0.2)',
                   transition: 'all 0.2s',
                 }}
