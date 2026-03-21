@@ -5,12 +5,12 @@ import { signOut } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { FiMic, FiMicOff, FiPaperclip, FiSend, FiBookmark, FiUser } from 'react-icons/fi';
-import { 
-  MdHotel, MdRestaurant, MdAttractions 
-} from 'react-icons/md';
+import { MdHotel, MdRestaurant, MdAttractions } from 'react-icons/md';
 
 function ChatPage(props) {
   const navigate = useNavigate();
+  const isMobile = window.innerWidth < 768;
+
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -21,7 +21,7 @@ function ChatPage(props) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [installPrompt, setInstallPrompt] = useState(null);
   const [showInstall, setShowInstall] = useState(false);
   const [conversations, setConversations] = useState([]);
@@ -43,7 +43,6 @@ function ChatPage(props) {
     });
   }, []);
 
-  // Load past conversations
   useEffect(() => {
     const loadConversations = async () => {
       if (!props.user) return;
@@ -100,6 +99,7 @@ function ChatPage(props) {
 
   const sendMessage = async (text) => {
     if (!text.trim()) return;
+    if (isMobile) setSidebarOpen(false);
 
     const userMsg = {
       role: 'user',
@@ -161,8 +161,26 @@ function ChatPage(props) {
     <div style={{
       display: 'flex', height: '100vh',
       background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-      overflow: 'hidden',
+      overflow: 'hidden', position: 'relative',
     }}>
+
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {sidebarOpen && isMobile && (
+          <motion.div
+            style={{
+              position: 'fixed', top: 0, left: 0,
+              width: '100vw', height: '100vh',
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 10,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Sidebar */}
       <AnimatePresence>
@@ -170,10 +188,14 @@ function ChatPage(props) {
           <motion.div
             style={{
               width: 280,
-              background: 'rgba(255,255,255,0.05)',
+              background: 'rgba(15,12,41,0.95)',
               backdropFilter: 'blur(20px)',
               borderRight: '1px solid rgba(255,255,255,0.1)',
               display: 'flex', flexDirection: 'column',
+              position: isMobile ? 'fixed' : 'relative',
+              top: 0, left: 0,
+              height: '100vh',
+              zIndex: isMobile ? 20 : 'auto',
             }}
             initial={{ x: -280 }}
             animate={{ x: 0 }}
@@ -207,11 +229,14 @@ function ChatPage(props) {
             {/* New Chat */}
             <div style={{ padding: '15px' }}>
               <motion.button
-                onClick={() => setMessages([{
-                  role: 'assistant',
-                  content: '👋 Starting fresh! What are you looking for today?',
-                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                }])}
+                onClick={() => {
+                  setMessages([{
+                    role: 'assistant',
+                    content: '👋 Starting fresh! What are you looking for today?',
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  }]);
+                  if (isMobile) setSidebarOpen(false);
+                }}
                 style={{
                   width: '100%', padding: '11px',
                   background: 'linear-gradient(135deg, #667eea, #764ba2)',
@@ -245,6 +270,7 @@ function ChatPage(props) {
                     display: 'flex', gap: 10, alignItems: 'flex-start',
                   }}
                   whileHover={{ background: 'rgba(255,255,255,0.08)' }}
+                  onClick={() => isMobile && setSidebarOpen(false)}
                 >
                   <span style={{ fontSize: 18, marginTop: 2 }}>💬</span>
                   <div style={{ minWidth: 0 }}>
@@ -269,7 +295,7 @@ function ChatPage(props) {
               )}
             </div>
 
-            {/* User Profile + Logout */}
+            {/* User Profile */}
             <div style={{
               padding: '15px',
               borderTop: '1px solid rgba(255,255,255,0.08)',
@@ -285,32 +311,23 @@ function ChatPage(props) {
                   {userInitial}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{
-                    fontSize: 13, fontWeight: 600, color: 'white',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
+                  <p
+                    onClick={() => { navigate('/profile'); if (isMobile) setSidebarOpen(false); }}
+                    style={{
+                      fontSize: 13, fontWeight: 600, color: 'white',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                    }}
+                  >
                     {userName}
                   </p>
-                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Free Plan</p>
+                  <p
+                    onClick={() => { navigate('/bookings'); if (isMobile) setSidebarOpen(false); }}
+                    style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+                  >
+                    📋 History
+                  </p>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-  <p
-    onClick={() => navigate('/profile')}
-    style={{
-      fontSize: 13, fontWeight: 600, color: 'white',
-      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-      cursor: 'pointer',
-    }}
-  >
-    {userName}
-  </p>
-  <p
-    onClick={() => navigate('/bookings')}
-    style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
-  >
-    📋 History
-  </p>
-</div>
                 <motion.button
                   onClick={handleLogout}
                   style={{
@@ -332,7 +349,7 @@ function ChatPage(props) {
       </AnimatePresence>
 
       {/* Main Chat */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
         {/* Header */}
         <div style={{
@@ -347,6 +364,7 @@ function ChatPage(props) {
             style={{
               background: 'none', border: 'none',
               color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 20,
+              padding: 4,
             }}
             whileHover={{ color: 'white', scale: 1.1 }}
           >☰</motion.button>
@@ -374,7 +392,7 @@ function ChatPage(props) {
           {showInstall && (
             <motion.div
               style={{
-                marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10,
+                marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8,
                 background: 'rgba(102,126,234,0.2)',
                 border: '1px solid rgba(102,126,234,0.3)',
                 borderRadius: 10, padding: '6px 12px',
@@ -382,7 +400,7 @@ function ChatPage(props) {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
             >
-              <p style={{ fontSize: 12, color: '#a78bfa' }}>📱 Install App</p>
+              <p style={{ fontSize: 12, color: '#a78bfa' }}>📱 Install</p>
               <motion.button
                 onClick={handleInstall}
                 style={{
@@ -429,7 +447,7 @@ function ChatPage(props) {
                   }}>🎯</div>
                 )}
 
-                <div style={{ maxWidth: '72%' }}>
+                <div style={{ maxWidth: isMobile ? '85%' : '72%' }}>
                   <div style={{
                     padding: '13px 17px',
                     borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
@@ -502,239 +520,231 @@ function ChatPage(props) {
         </div>
 
         {/* Input Area */}
-<div style={{
-  padding: '12px 20px',
-  background: 'rgba(255,255,255,0.05)',
-  backdropFilter: 'blur(20px)',
-  borderTop: '1px solid rgba(255,255,255,0.08)',
-}}>
-  {/* Quick suggestions */}
-  <div style={{
-    display: 'flex', gap: 8, marginBottom: 10,
-    overflowX: 'auto', paddingBottom: 4,
-  }}>
-    {[
-      { text: 'Cheap hotel', query: 'I need a cheap hotel in the centre' },
-      { text: 'Indian food', query: 'Find me an Indian restaurant' },
-      { text: 'Museum', query: 'Looking for a museum to visit' },
-      { text: 'Free parking', query: 'Hotel with free parking' },
-    ].map(s => (
-      <motion.button
-        key={s.text}
-        onClick={() => sendMessage(s.query)}
-        style={{
-          padding: '6px 14px',
-          background: 'rgba(102,126,234,0.12)',
-          border: '1px solid rgba(102,126,234,0.25)',
-          borderRadius: 20, fontSize: 12,
-          color: '#a78bfa', cursor: 'pointer',
-          whiteSpace: 'nowrap', fontWeight: 500,
-        }}
-        whileHover={{ background: 'rgba(102,126,234,0.25)', scale: 1.03 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {s.text}
-      </motion.button>
-    ))}
-  </div>
+        <div style={{
+          padding: '12px 20px',
+          background: 'rgba(255,255,255,0.05)',
+          backdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          {/* Quick suggestions */}
+          <div style={{
+            display: 'flex', gap: 8, marginBottom: 10,
+            overflowX: 'auto', paddingBottom: 4,
+          }}>
+            {[
+              { text: 'Cheap hotel', query: 'I need a cheap hotel in the centre' },
+              { text: 'Indian food', query: 'Find me an Indian restaurant' },
+              { text: 'Museum', query: 'Looking for a museum to visit' },
+              { text: 'Free parking', query: 'Hotel with free parking' },
+            ].map(s => (
+              <motion.button
+                key={s.text}
+                onClick={() => sendMessage(s.query)}
+                style={{
+                  padding: '6px 14px',
+                  background: 'rgba(102,126,234,0.12)',
+                  border: '1px solid rgba(102,126,234,0.25)',
+                  borderRadius: 20, fontSize: 12,
+                  color: '#a78bfa', cursor: 'pointer',
+                  whiteSpace: 'nowrap', fontWeight: 500,
+                }}
+                whileHover={{ background: 'rgba(102,126,234,0.25)', scale: 1.03 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {s.text}
+              </motion.button>
+            ))}
+          </div>
 
-  {/* Main input row */}
-  <div style={{
-    display: 'flex', gap: 8, alignItems: 'center',
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 16, padding: '8px 12px',
-  }}>
-    <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }}
-      onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }}
-    />
+          {/* Main input row */}
+          <div style={{
+            display: 'flex', gap: 8, alignItems: 'center',
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 16, padding: '8px 12px',
+          }}>
+            <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }}
+              onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }}
+            />
 
-    {/* Left icons */}
-    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      {/* Attach file */}
-      <motion.button
-        onClick={() => fileInputRef.current.click()}
-        title="Upload audio file"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'transparent', border: 'none',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.4)',
-        }}
-        whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <FiPaperclip size={18} />
-      </motion.button>
+            {/* Left icons */}
+            <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <motion.button
+                onClick={() => fileInputRef.current.click()}
+                title="Upload audio file"
+                style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: 'transparent', border: 'none',
+                  cursor: 'pointer', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  color: 'rgba(255,255,255,0.4)',
+                }}
+                whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <FiPaperclip size={18} />
+              </motion.button>
 
-      {/* Mic */}
-      <motion.button
-        onClick={() => {
-          if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            alert('Use Chrome for voice input.');
-            return;
-          }
-          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-          const recognition = new SR();
-          recognition.lang = 'en-US';
-          recognition.interimResults = false;
-          setIsRecording(true);
-          recognition.start();
-          recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); };
-          recognition.onerror = () => setIsRecording(false);
-          recognition.onend = () => setIsRecording(false);
-        }}
-        title="Voice input"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: isRecording ? 'rgba(245,87,108,0.15)' : 'transparent',
-          border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: isRecording ? '#f5576c' : 'rgba(255,255,255,0.4)',
-        }}
-        animate={isRecording ? { scale: [1, 1.15, 1] } : {}}
-        transition={{ duration: 0.8, repeat: Infinity }}
-        whileHover={{ color: '#f5576c', background: 'rgba(245,87,108,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        {isRecording ? <FiMicOff size={18} /> : <FiMic size={18} />}
-      </motion.button>
-    </div>
+              <motion.button
+                onClick={() => {
+                  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                    alert('Use Chrome for voice input.');
+                    return;
+                  }
+                  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                  const recognition = new SR();
+                  recognition.lang = 'en-US';
+                  recognition.interimResults = false;
+                  setIsRecording(true);
+                  recognition.start();
+                  recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); };
+                  recognition.onerror = () => setIsRecording(false);
+                  recognition.onend = () => setIsRecording(false);
+                }}
+                title="Voice input"
+                style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: isRecording ? 'rgba(245,87,108,0.15)' : 'transparent',
+                  border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isRecording ? '#f5576c' : 'rgba(255,255,255,0.4)',
+                }}
+                animate={isRecording ? { scale: [1, 1.15, 1] } : {}}
+                transition={{ duration: 0.8, repeat: Infinity }}
+                whileHover={{ color: '#f5576c', background: 'rgba(245,87,108,0.1)', scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                {isRecording ? <FiMicOff size={18} /> : <FiMic size={18} />}
+              </motion.button>
+            </div>
 
-    {/* Divider */}
-    <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+            <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
-    {/* Text input */}
-    <input
-      type="text" value={input}
-      onChange={e => setInput(e.target.value)}
-      onKeyPress={e => e.key === 'Enter' && sendMessage(input)}
-      placeholder="Ask about hotels, restaurants, attractions..."
-      style={{
-        flex: 1, background: 'transparent',
-        border: 'none', outline: 'none',
-        color: 'white', fontSize: 14,
-        padding: '4px 8px',
-      }}
-    />
+            <input
+              type="text" value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && sendMessage(input)}
+              placeholder="Ask about hotels, restaurants, attractions..."
+              style={{
+                flex: 1, background: 'transparent',
+                border: 'none', outline: 'none',
+                color: 'white', fontSize: 14, padding: '4px 8px',
+                minWidth: 0,
+              }}
+            />
 
-    {/* Divider */}
-    <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+            <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
 
-    {/* Right icons */}
-    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-      {/* Hotels */}
-      <motion.button
-        onClick={() => sendMessage('Show me available hotels')}
-        title="Hotels"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'transparent', border: 'none',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.4)',
-        }}
-        whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <MdHotel size={20} />
-      </motion.button>
+            {/* Right icons */}
+            <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              {!isMobile && (
+                <>
+                  <motion.button
+                    onClick={() => sendMessage('Show me available hotels')}
+                    title="Hotels"
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: 'transparent', border: 'none',
+                      cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: 'rgba(255,255,255,0.4)',
+                    }}
+                    whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <MdHotel size={20} />
+                  </motion.button>
 
-      {/* Restaurants */}
-      <motion.button
-        onClick={() => sendMessage('Find me a restaurant')}
-        title="Restaurants"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'transparent', border: 'none',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.4)',
-        }}
-        whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <MdRestaurant size={20} />
-      </motion.button>
+                  <motion.button
+                    onClick={() => sendMessage('Find me a restaurant')}
+                    title="Restaurants"
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: 'transparent', border: 'none',
+                      cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: 'rgba(255,255,255,0.4)',
+                    }}
+                    whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <MdRestaurant size={20} />
+                  </motion.button>
 
-      {/* Attractions */}
-      <motion.button
-        onClick={() => sendMessage('What attractions are nearby')}
-        title="Attractions"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'transparent', border: 'none',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.4)',
-        }}
-        whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <MdAttractions size={20} />
-      </motion.button>
+                  <motion.button
+                    onClick={() => sendMessage('What attractions are nearby')}
+                    title="Attractions"
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: 'transparent', border: 'none',
+                      cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: 'rgba(255,255,255,0.4)',
+                    }}
+                    whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <MdAttractions size={20} />
+                  </motion.button>
 
-      {/* Bookings */}
-      <motion.button
-        onClick={() => navigate('/bookings')}
-        title="History"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'transparent', border: 'none',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.4)',
-        }}
-        whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <FiBookmark size={18} />
-      </motion.button>
+                  <motion.button
+                    onClick={() => navigate('/bookings')}
+                    title="History"
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: 'transparent', border: 'none',
+                      cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: 'rgba(255,255,255,0.4)',
+                    }}
+                    whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <FiBookmark size={18} />
+                  </motion.button>
 
-      {/* Profile */}
-      <motion.button
-        onClick={() => navigate('/profile')}
-        title="Profile"
-        style={{
-          width: 36, height: 36, borderRadius: 10,
-          background: 'transparent', border: 'none',
-          cursor: 'pointer', display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
-          color: 'rgba(255,255,255,0.4)',
-        }}
-        whileHover={{ color: '#fa709a', background: 'rgba(250,112,154,0.1)', scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <FiUser size={18} />
-      </motion.button>
+                  <motion.button
+                    onClick={() => navigate('/profile')}
+                    title="Profile"
+                    style={{
+                      width: 36, height: 36, borderRadius: 10,
+                      background: 'transparent', border: 'none',
+                      cursor: 'pointer', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      color: 'rgba(255,255,255,0.4)',
+                    }}
+                    whileHover={{ color: '#fa709a', background: 'rgba(250,112,154,0.1)', scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <FiUser size={18} />
+                  </motion.button>
 
-      {/* Divider */}
-      <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+                  <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+                </>
+              )}
 
-      {/* Send button */}
-      <motion.button
-        onClick={() => sendMessage(input)}
-        disabled={!input.trim()}
-        style={{
-          width: 36, height: 36, borderRadius: 10, border: 'none',
-          background: input.trim()
-            ? 'linear-gradient(135deg, #667eea, #764ba2)'
-            : 'transparent',
-          cursor: input.trim() ? 'pointer' : 'default',
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'center', flexShrink: 0,
-          color: input.trim() ? 'white' : 'rgba(255,255,255,0.2)',
-          transition: 'all 0.2s',
-        }}
-        whileHover={input.trim() ? { scale: 1.1 } : {}}
-        whileTap={input.trim() ? { scale: 0.9 } : {}}
-      >
-        <FiSend size={16} />
-      </motion.button>
-    </div>
-  </div>
-</div>
+              <motion.button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim()}
+                style={{
+                  width: 36, height: 36, borderRadius: 10, border: 'none',
+                  background: input.trim()
+                    ? 'linear-gradient(135deg, #667eea, #764ba2)'
+                    : 'transparent',
+                  cursor: input.trim() ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', flexShrink: 0,
+                  color: input.trim() ? 'white' : 'rgba(255,255,255,0.2)',
+                  transition: 'all 0.2s',
+                }}
+                whileHover={input.trim() ? { scale: 1.1 } : {}}
+                whileTap={input.trim() ? { scale: 0.9 } : {}}
+              >
+                <FiSend size={16} />
+              </motion.button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
