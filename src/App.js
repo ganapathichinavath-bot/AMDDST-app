@@ -52,7 +52,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage user={currentUser} />} />
         <Route path="/login" element={<LoginPage onLogin={() => {}} />} />
-        <Route path="/chat" element={<ChatPage user={currentUser} />} />
+        <Route path="/chat" element={<ChatPage user={currentUser} isGuest={!currentUser} />} />
         <Route path="/profile" element={<ProfilePage user={currentUser} />} />
         <Route path="/bookings" element={<BookingsPage user={currentUser} />} />
       </Routes>
