@@ -4,6 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { 
+  FiMic, FiMicOff, FiPaperclip, FiSend, 
+  FiBookmark, FiUser, FiHome
+} from 'react-icons/fi';
+import { 
+  MdHotel, MdRestaurant, MdAttractions 
+} from 'react-icons/md';
 
 function ChatPage(props) {
   const navigate = useNavigate();
@@ -289,6 +296,24 @@ function ChatPage(props) {
                   </p>
                   <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Free Plan</p>
                 </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+  <p
+    onClick={() => navigate('/profile')}
+    style={{
+      fontSize: 13, fontWeight: 600, color: 'white',
+      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      cursor: 'pointer',
+    }}
+  >
+    {userName}
+  </p>
+  <p
+    onClick={() => navigate('/bookings')}
+    style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+  >
+    📋 History
+  </p>
+</div>
                 <motion.button
                   onClick={handleLogout}
                   style={{
@@ -480,114 +505,239 @@ function ChatPage(props) {
         </div>
 
         {/* Input Area */}
-        <div style={{
-          padding: '15px 20px',
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-        }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 4 }}>
-            {[
-              { text: '🏨 Cheap hotel', query: 'I need a cheap hotel in the centre' },
-              { text: '🍽️ Indian food', query: 'Find me an Indian restaurant' },
-              { text: '🎭 Museum', query: 'Looking for a museum to visit' },
-              { text: '🅿️ Free parking', query: 'Hotel with free parking' },
-            ].map(s => (
-              <motion.button
-                key={s.text}
-                onClick={() => sendMessage(s.query)}
-                style={{
-                  padding: '7px 14px',
-                  background: 'rgba(102,126,234,0.15)',
-                  border: '1px solid rgba(102,126,234,0.3)',
-                  borderRadius: 20, fontSize: 12,
-                  color: '#a78bfa', cursor: 'pointer',
-                  whiteSpace: 'nowrap', fontWeight: 500,
-                }}
-                whileHover={{ background: 'rgba(102,126,234,0.25)', scale: 1.03 }}
-                whileTap={{ scale: 0.95 }}
-              >{s.text}</motion.button>
-            ))}
-          </div>
+<div style={{
+  padding: '12px 20px',
+  background: 'rgba(255,255,255,0.05)',
+  backdropFilter: 'blur(20px)',
+  borderTop: '1px solid rgba(255,255,255,0.08)',
+}}>
+  {/* Quick suggestions */}
+  <div style={{
+    display: 'flex', gap: 8, marginBottom: 10,
+    overflowX: 'auto', paddingBottom: 4,
+  }}>
+    {[
+      { text: 'Cheap hotel', query: 'I need a cheap hotel in the centre' },
+      { text: 'Indian food', query: 'Find me an Indian restaurant' },
+      { text: 'Museum', query: 'Looking for a museum to visit' },
+      { text: 'Free parking', query: 'Hotel with free parking' },
+    ].map(s => (
+      <motion.button
+        key={s.text}
+        onClick={() => sendMessage(s.query)}
+        style={{
+          padding: '6px 14px',
+          background: 'rgba(102,126,234,0.12)',
+          border: '1px solid rgba(102,126,234,0.25)',
+          borderRadius: 20, fontSize: 12,
+          color: '#a78bfa', cursor: 'pointer',
+          whiteSpace: 'nowrap', fontWeight: 500,
+        }}
+        whileHover={{ background: 'rgba(102,126,234,0.25)', scale: 1.03 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {s.text}
+      </motion.button>
+    ))}
+  </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }}
-              onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }}
-            />
+  {/* Main input row */}
+  <div style={{
+    display: 'flex', gap: 8, alignItems: 'center',
+    background: 'rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 16, padding: '8px 12px',
+  }}>
+    <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }}
+      onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }}
+    />
 
-            <motion.button
-              onClick={() => fileInputRef.current.click()}
-              style={{
-                width: 44, height: 44, borderRadius: 12,
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.08)',
-                cursor: 'pointer', fontSize: 18,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}
-              whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }}
-              whileTap={{ scale: 0.9 }}
-            >📁</motion.button>
+    {/* Left icons */}
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      {/* Attach file */}
+      <motion.button
+        onClick={() => fileInputRef.current.click()}
+        title="Upload audio file"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'transparent', border: 'none',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.4)',
+        }}
+        whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <FiPaperclip size={18} />
+      </motion.button>
 
-            <motion.button
-              onClick={() => {
-                if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-                  alert('Use Chrome for voice input.');
-                  return;
-                }
-                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                const recognition = new SR();
-                recognition.lang = 'en-US';
-                recognition.interimResults = false;
-                setIsRecording(true);
-                recognition.start();
-                recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); };
-                recognition.onerror = () => setIsRecording(false);
-                recognition.onend = () => setIsRecording(false);
-              }}
-              style={{
-                width: 44, height: 44, borderRadius: 12,
-                border: '1px solid',
-                borderColor: isRecording ? '#f5576c' : 'rgba(255,255,255,0.15)',
-                background: isRecording ? 'rgba(245,87,108,0.2)' : 'rgba(255,255,255,0.08)',
-                cursor: 'pointer', fontSize: 18,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}
-              animate={isRecording ? { boxShadow: ['0 0 0 0 rgba(245,87,108,0)', '0 0 0 10px rgba(245,87,108,0)'] } : {}}
-              transition={{ duration: 1, repeat: Infinity }}
-              whileTap={{ scale: 0.9 }}
-            >🎙️</motion.button>
+      {/* Mic */}
+      <motion.button
+        onClick={() => {
+          if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            alert('Use Chrome for voice input.');
+            return;
+          }
+          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+          const recognition = new SR();
+          recognition.lang = 'en-US';
+          recognition.interimResults = false;
+          setIsRecording(true);
+          recognition.start();
+          recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); };
+          recognition.onerror = () => setIsRecording(false);
+          recognition.onend = () => setIsRecording(false);
+        }}
+        title="Voice input"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: isRecording ? 'rgba(245,87,108,0.15)' : 'transparent',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: isRecording ? '#f5576c' : 'rgba(255,255,255,0.4)',
+        }}
+        animate={isRecording ? { scale: [1, 1.15, 1] } : {}}
+        transition={{ duration: 0.8, repeat: Infinity }}
+        whileHover={{ color: '#f5576c', background: 'rgba(245,87,108,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        {isRecording ? <FiMicOff size={18} /> : <FiMic size={18} />}
+      </motion.button>
+    </div>
 
-            <input
-              type="text" value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && sendMessage(input)}
-              placeholder="Ask about hotels, restaurants, attractions..."
-              style={{
-                flex: 1, padding: '13px 18px',
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 14, fontSize: 14,
-                outline: 'none', color: 'white', transition: 'border 0.2s',
-              }}
-              onFocus={e => e.target.style.borderColor = 'rgba(102,126,234,0.6)'}
-              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
-            />
+    {/* Divider */}
+    <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
 
-            <motion.button
-              onClick={() => sendMessage(input)}
-              style={{
-                width: 44, height: 44, borderRadius: 12, border: 'none',
-                background: input.trim() ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'rgba(255,255,255,0.08)',
-                cursor: input.trim() ? 'pointer' : 'default',
-                fontSize: 18, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s',
-                boxShadow: input.trim() ? '0 4px 15px rgba(102,126,234,0.4)' : 'none',
-              }}
-              whileHover={input.trim() ? { scale: 1.1 } : {}}
-              whileTap={input.trim() ? { scale: 0.9 } : {}}
-            >➤</motion.button>
-          </div>
-        </div>
+    {/* Text input */}
+    <input
+      type="text" value={input}
+      onChange={e => setInput(e.target.value)}
+      onKeyPress={e => e.key === 'Enter' && sendMessage(input)}
+      placeholder="Ask about hotels, restaurants, attractions..."
+      style={{
+        flex: 1, background: 'transparent',
+        border: 'none', outline: 'none',
+        color: 'white', fontSize: 14,
+        padding: '4px 8px',
+      }}
+    />
+
+    {/* Divider */}
+    <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+    {/* Right icons */}
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      {/* Hotels */}
+      <motion.button
+        onClick={() => sendMessage('Show me available hotels')}
+        title="Hotels"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'transparent', border: 'none',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.4)',
+        }}
+        whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <MdHotel size={20} />
+      </motion.button>
+
+      {/* Restaurants */}
+      <motion.button
+        onClick={() => sendMessage('Find me a restaurant')}
+        title="Restaurants"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'transparent', border: 'none',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.4)',
+        }}
+        whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <MdRestaurant size={20} />
+      </motion.button>
+
+      {/* Attractions */}
+      <motion.button
+        onClick={() => sendMessage('What attractions are nearby')}
+        title="Attractions"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'transparent', border: 'none',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.4)',
+        }}
+        whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <MdAttractions size={20} />
+      </motion.button>
+
+      {/* Bookings */}
+      <motion.button
+        onClick={() => navigate('/bookings')}
+        title="History"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'transparent', border: 'none',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.4)',
+        }}
+        whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <FiBookmark size={18} />
+      </motion.button>
+
+      {/* Profile */}
+      <motion.button
+        onClick={() => navigate('/profile')}
+        title="Profile"
+        style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'transparent', border: 'none',
+          cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          color: 'rgba(255,255,255,0.4)',
+        }}
+        whileHover={{ color: '#fa709a', background: 'rgba(250,112,154,0.1)', scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+      >
+        <FiUser size={18} />
+      </motion.button>
+
+      {/* Divider */}
+      <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+
+      {/* Send button */}
+      <motion.button
+        onClick={() => sendMessage(input)}
+        disabled={!input.trim()}
+        style={{
+          width: 36, height: 36, borderRadius: 10, border: 'none',
+          background: input.trim()
+            ? 'linear-gradient(135deg, #667eea, #764ba2)'
+            : 'transparent',
+          cursor: input.trim() ? 'pointer' : 'default',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'center', flexShrink: 0,
+          color: input.trim() ? 'white' : 'rgba(255,255,255,0.2)',
+          transition: 'all 0.2s',
+        }}
+        whileHover={input.trim() ? { scale: 1.1 } : {}}
+        whileTap={input.trim() ? { scale: 0.9 } : {}}
+      >
+        <FiSend size={16} />
+      </motion.button>
+    </div>
+  </div>
+</div>
       </div>
     </div>
   );

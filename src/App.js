@@ -7,6 +7,8 @@ import SplashScreen from './components/SplashScreen';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import ProfileSetup from './components/ProfileSetup';
+import ProfilePage from './components/ProfilePage';
+import BookingsPage from './components/BookingsPage';
 import ChatPage from './components/ChatPage';
 import './index.css';
 
@@ -51,13 +53,14 @@ function App() {
         <Route path="/" element={<LandingPage user={currentUser} />} />
         <Route path="/login" element={<LoginPage onLogin={() => {}} />} />
         <Route path="/chat" element={<ChatPage user={currentUser} />} />
+        <Route path="/profile" element={<ProfilePage user={currentUser} />} />
+        <Route path="/bookings" element={<BookingsPage user={currentUser} />} />
       </Routes>
 
       {showProfileSetup && currentUser && (
         <div style={{
           position: 'fixed', top: 0, left: 0,
-          width: '100vw', height: '100vh',
-          zIndex: 9999,
+          width: '100vw', height: '100vh', zIndex: 9999,
         }}>
           <ProfileSetup
             user={currentUser}
