@@ -1,70 +1,165 @@
-# Getting Started with Create React App
+# 🎯 AMDDST — Adaptive Multi-Domain Dialogue State Tracker
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://amddst-app.vercel.app)
+[![HuggingFace](https://img.shields.io/badge/Model-HuggingFace-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/ganirathod/amddst-dst-model)
+[![HuggingFace Space](https://img.shields.io/badge/Demo-HuggingFace%20Space-blue?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/ganirathod/amddst-demo)
 
-## Available Scripts
+> Based on the IEEE research paper that achieved **3rd place globally** at the DSTC10 Challenge
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## 🚀 Live Demo
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+👉 **[https://amddst-app.vercel.app](https://amddst-app.vercel.app)**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 📌 What is AMDDST?
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+AMDDST is an AI-powered travel assistant that tracks user intent across multi-turn conversations. It understands natural language requests for hotels, restaurants, and attractions — even handling speech recognition errors using Levenshtein post-processing.
 
-### `npm run build`
+**Example:**
+```
+User: I need a cheap hotel in the centre
+AI: Detected → hotel-pricerange = cheap | hotel-area = centre
+     → Shows real hotel results from database
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🧠 How It Works
+```
+User speaks/types
+       ↓
+BART-base model (fine-tuned on MultiWOZ 2.1)
+       ↓
+Dialogue State Tracking (slot-value pairs)
+       ↓
+Levenshtein Post-Processing (fixes ASR errors)
+       ↓
+Database Search (real hotels/restaurants/attractions)
+       ↓
+Results shown to user
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## 🔧 Tech Stack
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React.js, Framer Motion |
+| AI Model | BART-base (Facebook) |
+| Training | PyTorch, HuggingFace Transformers |
+| Dataset | MultiWOZ 2.1 (77,000+ examples) |
+| Database | Firebase Firestore |
+| Auth | Firebase Authentication |
+| Deployment | Vercel (frontend), HuggingFace Spaces (model) |
+| PWA | Service Worker, Web App Manifest |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 📊 Model Performance
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+| Metric | Value |
+|--------|-------|
+| Training examples | 77,000+ |
+| Model parameters | 139M |
+| Final training loss | 0.12 |
+| Base model | facebook/bart-base |
+| Training epochs | 1 |
+| GPU | Kaggle T4 |
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## ✨ Features
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- 🎙️ **Voice Input** — Web Speech API integration
+- 📁 **Audio Upload** — Upload audio files for processing
+- 🏨 **Hotel Search** — Real-time search from MultiWOZ database
+- 🍽️ **Restaurant Search** — Filter by cuisine, price, area
+- 🎭 **Attraction Discovery** — Find local attractions
+- 👤 **User Authentication** — Google OAuth + Email/Password
+- 💾 **Conversation History** — Saved to Firestore
+- 📱 **PWA** — Installable on any device
+- 🌙 **Guest Mode** — Try without signing up
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🏗️ Project Structure
+```
+amddst-app/
+├── public/
+│   ├── manifest.json          # PWA config
+│   └── service-worker.js      # Offline support
+├── src/
+│   ├── components/
+│   │   ├── SplashScreen.js    # Animated intro
+│   │   ├── LandingPage.js     # Home page
+│   │   ├── LoginPage.js       # Firebase auth
+│   │   ├── ProfileSetup.js    # New user setup
+│   │   ├── ProfilePage.js     # Edit profile
+│   │   ├── ChatPage.js        # Main chat interface
+│   │   ├── BookingsPage.js    # Conversation history
+│   │   └── SearchResults.js   # Hotel/restaurant cards
+│   ├── data/
+│   │   └── database.js        # MultiWOZ database
+│   ├── firebase.js            # Firebase config
+│   └── App.js                 # Route management
+```
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 🚀 Run Locally
+```bash
+# Clone the repo
+git clone https://github.com/ganapathichinavath-bot/AMDDST-app.git
+cd AMDDST-app
 
-### Making a Progressive Web App
+# Install dependencies
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+# Start development server
+npm start
+```
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🤖 Model Training
 
-### Deployment
+The BART-base model was fine-tuned on MultiWOZ 2.1 dataset using Kaggle T4 GPU.
+```python
+# Key training details
+model = "facebook/bart-base"
+epochs = 1
+batch_size = 16
+learning_rate = 2e-5
+training_examples = 77,441  # includes augmented data
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+**Data Augmentation:** Entity substitution to reduce domain bias
+**Post-processing:** Levenshtein distance for ASR error correction
 
-### `npm run build` fails to minify
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 📄 Research Paper
+
+Based on: **"Adaptive Multi-Domain Dialogue State Tracking on Spoken Conversations"**
+- Published in IEEE/ACM Transactions on Audio, Speech, and Language Processing, Vol. 32, 2024
+- DSTC10 Challenge — **3rd Place Globally**
+
+---
+
+## 👨‍💻 Author
+
+**Chinavath Ganapathi**
+- 🎓 CSE '27 — Neil Gogte Institute of Technology
+- 🔗 [LinkedIn](https://www.linkedin.com/in/ganirathod)
+- 🤗 [HuggingFace](https://huggingface.co/ganirathod)
+- 💻 [GitHub](https://github.com/ganapathichinavath-bot)
+
+---
+
+## 📝 License
+
+MIT License — feel free to use and modify.
