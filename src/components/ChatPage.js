@@ -108,6 +108,23 @@ function ChatPage(props) {
     navigate('/');
   };
 
+  const handleItemSelect = (item, type) => {
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: `✅ Great choice! You selected **${item.name}**\n\n📍 ${item.address}\n📞 ${item.phone || 'N/A'}\n💰 ${item.pricerange || 'N/A'}\n🗺️ ${item.area || 'N/A'}${item.stars ? `\n⭐ ${item.stars} stars` : ''}${item.food ? `\n🍴 ${item.food}` : ''}\n\nHow would you like to proceed?`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      actions: [
+        {
+          label: '✅ Confirm Booking',
+          onClick: () => navigate('/confirm', { state: { booking: { ...item, type } } })
+        },
+        { label: '📋 More Details', query: `Tell me more about ${item.name}` },
+        { label: '🔄 Find Alternatives', query: `Find alternatives to ${item.name}` },
+      ]
+    }]);
+    setSearchResults(null);
+  };
+
   const sendMessage = async (text) => {
     if (!text.trim()) return;
     if (isMobile) setSidebarOpen(false);
@@ -189,20 +206,6 @@ function ChatPage(props) {
     setIsLoading(false);
   };
 
-  const handleItemSelect = (item, type) => {
-    setMessages(prev => [...prev, {
-      role: 'assistant',
-      content: `✅ Great choice! You selected **${item.name}**\n\n📍 ${item.address}\n📞 ${item.phone || 'N/A'}\n💰 ${item.pricerange || 'N/A'}\n🗺️ ${item.area || 'N/A'}${item.stars ? `\n⭐ ${item.stars} stars` : ''}${item.food ? `\n🍴 ${item.food}` : ''}\n\nHow would you like to proceed?`,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      actions: [
-        { label: '✅ Confirm Booking', query: `I want to confirm booking at ${item.name}, ${item.address}` },
-        { label: '📋 More Details', query: `Tell me more about ${item.name}` },
-        { label: '🔄 Find Alternatives', query: `Find alternatives to ${item.name}` },
-      ]
-    }]);
-    setSearchResults(null);
-  };
-
   return (
     <div style={{
       display: 'flex', height: '100vh',
@@ -210,7 +213,6 @@ function ChatPage(props) {
       overflow: 'hidden', position: 'relative',
     }}>
 
-      {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (
           <motion.div
@@ -227,7 +229,6 @@ function ChatPage(props) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -407,10 +408,8 @@ function ChatPage(props) {
         )}
       </AnimatePresence>
 
-      {/* Main Chat */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
-        {/* Header */}
         <div style={{
           padding: '15px 20px',
           background: 'rgba(255,255,255,0.05)',
@@ -478,7 +477,6 @@ function ChatPage(props) {
           )}
         </div>
 
-        {/* Messages */}
         <div style={{
           flex: 1, overflowY: 'auto', padding: '20px',
           display: 'flex', flexDirection: 'column', gap: 16,
@@ -544,8 +542,8 @@ function ChatPage(props) {
                           background: 'linear-gradient(135deg, #667eea, #764ba2)',
                           display: 'flex', alignItems: 'center',
                           justifyContent: 'center', fontSize: 16, flexShrink: 0,
-                          boxShadow: '0 4px 12px rgba(102,126,234,0.4)',
                           alignSelf: 'flex-start', marginTop: 4,
+                          boxShadow: '0 4px 12px rgba(102,126,234,0.4)',
                         }}>🎯</div>
                       )}
 
@@ -576,16 +574,16 @@ function ChatPage(props) {
                             {msg.actions.map((action, ai) => (
                               <motion.button
                                 key={ai}
-                                onClick={() => sendMessage(action.query)}
+                                onClick={() => action.onClick ? action.onClick() : sendMessage(action.query)}
                                 style={{
                                   padding: '7px 14px',
-                                  background: 'rgba(102,126,234,0.15)',
-                                  border: '1px solid rgba(102,126,234,0.3)',
+                                  background: ai === 0 ? 'rgba(67,233,123,0.15)' : 'rgba(102,126,234,0.15)',
+                                  border: `1px solid ${ai === 0 ? 'rgba(67,233,123,0.3)' : 'rgba(102,126,234,0.3)'}`,
                                   borderRadius: 20, fontSize: 12,
-                                  color: '#a78bfa', cursor: 'pointer',
-                                  fontWeight: 600, whiteSpace: 'nowrap',
+                                  color: ai === 0 ? '#43e97b' : '#a78bfa',
+                                  cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap',
                                 }}
-                                whileHover={{ background: 'rgba(102,126,234,0.3)', scale: 1.05 }}
+                                whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                               >
                                 {action.label}
@@ -611,7 +609,6 @@ function ChatPage(props) {
                       )}
                     </motion.div>
 
-                    {/* Search Results */}
                     {index === messages.length - 1 && msg.role === 'assistant' && searchResults && searchResults.length > 0 && (
                       <motion.div
                         style={{ paddingLeft: isMobile ? 0 : 44 }}
@@ -665,7 +662,6 @@ function ChatPage(props) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
         <div style={{
           padding: '12px 20px',
           background: 'rgba(255,255,255,0.05)',

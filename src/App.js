@@ -9,10 +9,10 @@ import LoginPage from './components/LoginPage';
 import ProfileSetup from './components/ProfileSetup';
 import ProfilePage from './components/ProfilePage';
 import BookingsPage from './components/BookingsPage';
+import BookingConfirmPage from './components/BookingConfirmPage';
 import ChatPage from './components/ChatPage';
-import './index.css';
 import NotFoundPage from './components/NotFoundPage';
-<Route path="*" element={<NotFoundPage />} />
+import './index.css';
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -57,6 +57,8 @@ function App() {
         <Route path="/chat" element={<ChatPage user={currentUser} isGuest={!currentUser} />} />
         <Route path="/profile" element={<ProfilePage user={currentUser} />} />
         <Route path="/bookings" element={<BookingsPage user={currentUser} />} />
+        <Route path="/confirm" element={<BookingConfirmPage user={currentUser} />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       {showProfileSetup && currentUser && (
