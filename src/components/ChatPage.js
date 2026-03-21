@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { 
-  FiMic, FiMicOff, FiPaperclip, FiSend, 
-  FiBookmark, FiUser, FiHome
-} from 'react-icons/fi';
+import { FiMic, FiMicOff, FiPaperclip, FiSend, FiBookmark, FiUser } from 'react-icons/fi';
 import { 
   MdHotel, MdRestaurant, MdAttractions 
 } from 'react-icons/md';
