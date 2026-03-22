@@ -380,7 +380,7 @@ function LandingPage(props) {
         borderTop: '1px solid rgba(255,255,255,0.08)',
       }}>
         <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-          Built with ❤️ by Chinavath Ganapathi | AMDDST — IEEE Research Implementation
+          Built with ❤️ by Gani Rathod | AMDDST — IEEE Research Implementation
         </p>
       </div>
     </div>
