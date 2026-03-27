@@ -5,10 +5,31 @@ import { signOut } from 'firebase/auth';
 import { collection, addDoc, query, orderBy, limit, getDocs, where, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { FiMic, FiMicOff, FiPaperclip, FiSend, FiBookmark, FiUser, FiHome, FiLogOut, FiTrash2, FiMessageSquare } from 'react-icons/fi';
-import { MdHotel, MdRestaurant, MdAttractions } from 'react-icons/md';
-import { searchHotels, searchRestaurants, searchAttractions, parseSlots } from '../data/database';
+import { MdHotel, MdRestaurant, MdAttractions, MdLocalTaxi } from 'react-icons/md';
+import { searchHotels, searchRestaurants, searchAttractions, searchTaxis, parseSlots, isGreeting, isAppInfoQuery, detectDomain } from '../data/database';
 import SearchResults from './SearchResults';
 import { ChatSkeleton, ConversationSkeleton } from './SkeletonLoader';
+
+// ── SMART RESPONSE ENGINE ─────────────────────────────────────────────────────
+function getSmartResponse(text, userName) {
+  const name = userName ? `, ${userName}` : '';
+
+  if (isGreeting(text)) {
+    return {
+      type: 'greeting',
+      message: `👋 Hello${name}! Welcome to AMDDST — your AI travel assistant.\n\nI can help you with:\n🏨 **Hotels** — find and book hotels\n🍽️ **Restaurants** — discover dining spots\n🎭 **Attractions** — explore museums, theatres, parks\n🚖 **Taxis** — book a cab\n\nWhat are you looking for today?`,
+    };
+  }
+
+  if (isAppInfoQuery(text)) {
+    return {
+      type: 'info',
+      message: `🎯 **Here's what I can do:**\n\n🏨 **Hotels** — Find hotels by area, price, parking, WiFi, star rating\n🍽️ **Restaurants** — Find restaurants by cuisine, area, price range\n🎭 **Attractions** — Find museums, cinemas, theatres, parks\n🚖 **Taxis** — Book a taxi for any destination\n\n💡 **Try saying:**\n• "I need a cheap hotel in the centre with free parking"\n• "Find me an Italian restaurant"\n• "Looking for a museum to visit"\n• "Book a taxi"\n\nAll data is based on Cambridge, UK — powered by the MultiWOZ dataset and DSTC10 3rd place AI model.`,
+    };
+  }
+
+  return null;
+}
 
 function ChatPage(props) {
   const navigate = useNavigate();
@@ -16,7 +37,7 @@ function ChatPage(props) {
 
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: '👋 Hi! I\'m AMDDST, your AI travel assistant.\n\nTell me what you\'re looking for!\n\nTry:\n• "I need a cheap hotel in the centre"\n• "Find me an Indian restaurant"\n• "Looking for a museum to visit"',
+    content: '👋 Hi! I\'m AMDDST, your AI travel assistant.\n\nI can help you find:\n🏨 **Hotels** · 🍽️ **Restaurants** · 🎭 **Attractions** · 🚖 **Taxis**\n\nTell me what you\'re looking for or type **"help"** to see what I can do!',
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   }]);
   const [input, setInput] = useState('');
@@ -38,41 +59,23 @@ function ChatPage(props) {
   const currentSessionDocId = useRef(null);
   const currentSessionId = useRef(`session_${Date.now()}`);
 
-  const userName = props.user?.displayName || props.user?.email?.split('@')[0] || 'Guest';
-  const userInitial = userName[0].toUpperCase();
+  const userName = props.user?.displayName || props.user?.email?.split('@')[0] || '';
+  const userInitial = userName ? userName[0].toUpperCase() : 'G';
 
+  useEffect(() => { setTimeout(() => setPageLoading(false), 800); }, []);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  useEffect(() => {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-      setShowInstall(true);
-    });
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); setInstallPrompt(e); setShowInstall(true); });
   }, []);
 
   useEffect(() => {
     const loadConversations = async () => {
       if (!props.user) return;
       try {
-        const q = query(
-          collection(db, 'conversations'),
-          where('uid', '==', props.user.uid),
-          orderBy('createdAt', 'desc'),
-          limit(20)
-        );
+        const q = query(collection(db, 'conversations'), where('uid', '==', props.user.uid), orderBy('createdAt', 'desc'), limit(20));
         const snapshot = await getDocs(q);
         setConversations(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (err) {
-        console.error('Load conversations error:', err);
-      }
+      } catch (err) { console.error('Load conversations error:', err); }
     };
     loadConversations();
   }, [props.user]);
@@ -80,77 +83,30 @@ function ChatPage(props) {
   const upsertConversation = async (userMessage, botReply) => {
     if (!props.user) return;
     try {
-      const updatedMsgs = [...sessionMessages,
-        { role: 'user', content: userMessage },
-        { role: 'assistant', content: botReply }
-      ];
+      const updatedMsgs = [...sessionMessages, { role: 'user', content: userMessage }, { role: 'assistant', content: botReply }];
       setSessionMessages(updatedMsgs);
       const preview = botReply.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\n/g, ' ').slice(0, 60);
-
       if (currentSessionDocId.current) {
-        await updateDoc(doc(db, 'conversations', currentSessionDocId.current), {
-          messages: updatedMsgs,
-          preview,
-          updatedAt: new Date().toISOString(),
-        });
-        setConversations(prev => prev.map(c =>
-          c.id === currentSessionDocId.current
-            ? { ...c, messages: updatedMsgs, preview }
-            : c
-        ));
+        await updateDoc(doc(db, 'conversations', currentSessionDocId.current), { messages: updatedMsgs, preview, updatedAt: new Date().toISOString() });
+        setConversations(prev => prev.map(c => c.id === currentSessionDocId.current ? { ...c, messages: updatedMsgs, preview } : c));
       } else {
-        const newConv = {
-          uid: props.user.uid,
-          sessionId: currentSessionId.current,
-          title: userMessage.slice(0, 40),
-          preview,
-          messages: updatedMsgs,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
+        const newConv = { uid: props.user.uid, sessionId: currentSessionId.current, title: userMessage.slice(0, 40), preview, messages: updatedMsgs, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         const docRef = await addDoc(collection(db, 'conversations'), newConv);
         currentSessionDocId.current = docRef.id;
         setConversations(prev => [{ id: docRef.id, ...newConv }, ...prev.slice(0, 19)]);
       }
-    } catch (err) {
-      console.error('upsertConversation error:', err);
-    }
+    } catch (err) { console.error('upsertConversation error:', err); }
   };
 
   const loadPastConversation = (conv) => {
     let loadedMessages = [];
-
-    // New format — has messages array
     if (conv.messages && conv.messages.length > 0) {
-      loadedMessages = conv.messages.map(m => ({
-        role: m.role,
-        content: m.content,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }));
+      loadedMessages = conv.messages.map(m => ({ role: m.role, content: m.content, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }));
+    } else if (conv.userMessage) {
+      loadedMessages = [{ role: 'user', content: conv.userMessage, time: '' }, { role: 'assistant', content: conv.botReply || '', time: '' }];
     }
-    // Old format — single userMessage + botReply
-    else if (conv.userMessage) {
-      loadedMessages = [
-        { role: 'user', content: conv.userMessage, time: '' },
-        { role: 'assistant', content: conv.botReply || '', time: '' },
-      ];
-    }
-
-    if (loadedMessages.length === 0) {
-      alert('No messages found in this conversation.');
-      return;
-    }
-
-    setMessages([
-      {
-        role: 'assistant',
-        content: `📂 Continuing conversation: **"${conv.title}"**\n\nYou can keep chatting or start a new one.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      },
-      ...loadedMessages
-    ]);
-
-    // Allow continuation — set session to this doc
+    if (loadedMessages.length === 0) { alert('No messages found.'); return; }
+    setMessages([{ role: 'assistant', content: `📂 Continuing: **"${conv.title}"**\n\nYou can keep chatting from where you left off.`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }, ...loadedMessages]);
     currentSessionDocId.current = conv.id;
     setSessionMessages(loadedMessages.map(m => ({ role: m.role, content: m.content })));
     setSearchResults(null);
@@ -161,65 +117,21 @@ function ChatPage(props) {
     try {
       await deleteDoc(doc(db, 'conversations', convId));
       setConversations(prev => prev.filter(c => c.id !== convId));
-      if (currentSessionDocId.current === convId) {
-        currentSessionDocId.current = null;
-        setSessionMessages([]);
-      }
+      if (currentSessionDocId.current === convId) { currentSessionDocId.current = null; setSessionMessages([]); }
       setDeleteConfirmId(null);
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
+    } catch (err) { console.error('Delete error:', err); }
   };
 
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const result = await installPrompt.userChoice;
-    if (result.outcome === 'accepted') setShowInstall(false);
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    localStorage.removeItem('amddst_user');
-    navigate('/');
-  };
-
-  const extractFromUserMessage = (text) => {
-    const slots = {};
-    const t = text.toLowerCase();
-    if (t.includes('cheap') || t.includes('budget')) slots['hotel-pricerange'] = 'cheap';
-    if (t.includes('moderate') || t.includes('mid')) slots['hotel-pricerange'] = 'moderate';
-    if (t.includes('expensive') || t.includes('luxury')) slots['hotel-pricerange'] = 'expensive';
-    if (t.includes('centre') || t.includes('center') || t.includes('central')) {
-      slots['hotel-area'] = 'centre'; slots['restaurant-area'] = 'centre'; slots['attraction-area'] = 'centre';
-    }
-    if (t.includes('north')) { slots['hotel-area'] = 'north'; slots['restaurant-area'] = 'north'; }
-    if (t.includes('south')) { slots['hotel-area'] = 'south'; slots['restaurant-area'] = 'south'; }
-    if (t.includes('east')) { slots['hotel-area'] = 'east'; slots['restaurant-area'] = 'east'; }
-    if (t.includes('west')) { slots['hotel-area'] = 'west'; slots['restaurant-area'] = 'west'; }
-    if (t.includes('indian')) slots['restaurant-food'] = 'indian';
-    if (t.includes('chinese')) slots['restaurant-food'] = 'chinese';
-    if (t.includes('italian')) slots['restaurant-food'] = 'italian';
-    if (t.includes('thai')) slots['restaurant-food'] = 'thai';
-    if (t.includes('british')) slots['restaurant-food'] = 'british';
-    if (t.includes('mediterranean')) slots['restaurant-food'] = 'mediterranean';
-    if (t.includes('museum')) slots['attraction-type'] = 'museum';
-    if (t.includes('theatre') || t.includes('theater')) slots['attraction-type'] = 'theatre';
-    if (t.includes('cinema') || t.includes('movie')) slots['attraction-type'] = 'cinema';
-    if (t.includes('park')) slots['attraction-type'] = 'park';
-    if (t.includes('parking')) slots['hotel-parking'] = 'yes';
-    if (t.includes('internet') || t.includes('wifi')) slots['hotel-internet'] = 'yes';
-    return slots;
-  };
+  const handleLogout = async () => { await signOut(auth); localStorage.removeItem('amddst_user'); navigate('/'); };
 
   const handleItemSelect = (item, type) => {
-    const emoji = type === 'hotel' ? '🏨' : type === 'restaurant' ? '🍽️' : '🎭';
+    const emoji = type === 'hotel' ? '🏨' : type === 'restaurant' ? '🍽️' : type === 'taxi' ? '🚖' : '🎭';
     const lines = [
       `${emoji} **${item.name}**`,
       `📍 **Address:** ${item.address}`,
       `📞 **Phone:** ${item.phone || 'N/A'}`,
       `💰 **Price:** ${item.pricerange || 'N/A'}`,
-      `🗺️ **Area:** ${item.area || 'N/A'}`,
+      item.area ? `🗺️ **Area:** ${item.area}` : null,
       item.stars ? `⭐ **Stars:** ${item.stars} stars` : null,
       item.food ? `🍴 **Cuisine:** ${item.food}` : null,
       item.type && type === 'attraction' ? `🎪 **Type:** ${item.type}` : null,
@@ -234,36 +146,74 @@ function ChatPage(props) {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       actions: [
         { label: '✅ Confirm Booking', onClick: () => navigate('/confirm', { state: { booking: { ...item, type } } }) },
-        { label: '🔄 Find Alternatives', query: type === 'hotel' ? 'Find me another hotel' : type === 'restaurant' ? 'Find me another restaurant' : 'Find another attraction' },
+        { label: '🔄 Find Alternatives', query: `Find another ${type}` },
       ]
     }]);
     setSearchResults(null);
+  };
+
+  const extractFromUserMessage = (text) => {
+    const slots = {};
+    const t = text.toLowerCase();
+    if (t.includes('cheap') || t.includes('budget')) slots['hotel-pricerange'] = 'cheap';
+    if (t.includes('moderate') || t.includes('mid')) slots['hotel-pricerange'] = 'moderate';
+    if (t.includes('expensive') || t.includes('luxury')) slots['hotel-pricerange'] = 'expensive';
+    if (t.includes('centre') || t.includes('center') || t.includes('central')) { slots['hotel-area'] = 'centre'; slots['restaurant-area'] = 'centre'; slots['attraction-area'] = 'centre'; }
+    if (t.includes('north')) { slots['hotel-area'] = 'north'; slots['restaurant-area'] = 'north'; slots['attraction-area'] = 'north'; }
+    if (t.includes('south')) { slots['hotel-area'] = 'south'; slots['restaurant-area'] = 'south'; }
+    if (t.includes('east')) { slots['hotel-area'] = 'east'; slots['restaurant-area'] = 'east'; slots['attraction-area'] = 'east'; }
+    if (t.includes('west')) { slots['hotel-area'] = 'west'; slots['restaurant-area'] = 'west'; slots['attraction-area'] = 'west'; }
+    if (t.includes('indian')) slots['restaurant-food'] = 'indian';
+    if (t.includes('chinese')) slots['restaurant-food'] = 'chinese';
+    if (t.includes('italian')) slots['restaurant-food'] = 'italian';
+    if (t.includes('thai')) slots['restaurant-food'] = 'thai';
+    if (t.includes('british')) slots['restaurant-food'] = 'british';
+    if (t.includes('mediterranean')) slots['restaurant-food'] = 'mediterranean';
+    if (t.includes('mexican')) slots['restaurant-food'] = 'mexican';
+    if (t.includes('portuguese')) slots['restaurant-food'] = 'portuguese';
+    if (t.includes('museum')) slots['attraction-type'] = 'museum';
+    if (t.includes('theatre') || t.includes('theater')) slots['attraction-type'] = 'theatre';
+    if (t.includes('cinema') || t.includes('movie')) slots['attraction-type'] = 'cinema';
+    if (t.includes('park')) slots['attraction-type'] = 'park';
+    if (t.includes('gallery')) slots['attraction-type'] = 'museum';
+    if (t.includes('parking')) slots['hotel-parking'] = 'yes';
+    if (t.includes('internet') || t.includes('wifi')) slots['hotel-internet'] = 'yes';
+    if (t.includes('cheap') || t.includes('budget')) slots['taxi-pricerange'] = 'cheap';
+    if (t.includes('expensive') || t.includes('luxury')) slots['taxi-pricerange'] = 'expensive';
+    return slots;
   };
 
   const sendMessage = async (text) => {
     if (!text.trim()) return;
     if (isMobile) setSidebarOpen(false);
 
-    const userMsg = {
-      role: 'user', content: text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    const userMsg = { role: 'user', content: text, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
     setSearchResults(null);
 
+    // ── SMART LOCAL RESPONSES (no AI call needed) ──────────────────
+    const smartResponse = getSmartResponse(text, userName);
+    if (smartResponse) {
+      setTimeout(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: smartResponse.message, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+        setIsLoading(false);
+      }, 600);
+      return;
+    }
+
+    // ── DOMAIN DETECTION ──────────────────────────────────────────
     const userSlots = extractFromUserMessage(text);
     const t = text.toLowerCase();
-    const mentionsHotel = t.includes('hotel') || t.includes('stay') || t.includes('room');
-    const mentionsRestaurant = t.includes('restaurant') || t.includes('food') || t.includes('eat') || t.includes('indian') || t.includes('chinese') || t.includes('italian') || t.includes('thai');
-    const mentionsAttraction = t.includes('museum') || t.includes('attraction') || t.includes('visit') || t.includes('theatre') || t.includes('cinema') || t.includes('park');
+    const mentionsHotel = t.includes('hotel') || t.includes('stay') || t.includes('room') || t.includes('accommodation') || t.includes('guesthouse') || t.includes('hostel') || t.includes('lodge') || t.includes('b&b');
+    const mentionsRestaurant = t.includes('restaurant') || t.includes('food') || t.includes('eat') || t.includes('dining') || t.includes('dinner') || t.includes('lunch') || t.includes('cafe') || t.includes('indian') || t.includes('chinese') || t.includes('italian') || t.includes('thai') || t.includes('mexican') || t.includes('british') || t.includes('mediterranean') || t.includes('portuguese');
+    const mentionsAttraction = t.includes('museum') || t.includes('attraction') || t.includes('visit') || t.includes('theatre') || t.includes('cinema') || t.includes('park') || t.includes('gallery') || t.includes('sightseeing') || t.includes('explore');
+    const mentionsTaxi = t.includes('taxi') || t.includes('cab') || t.includes('ride') || t.includes('uber') || t.includes('pickup') || t.includes('pick up') || t.includes('driver') || t.includes('transport') || t.includes('book a car');
 
     try {
-      const response = await fetch(
-        'https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat',
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [text, []] }) }
-      );
+      // Call AI
+      const response = await fetch('https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [text, []] }) });
       const result = await response.json();
       const pollResponse = await fetch(`https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat/${result.event_id}`);
       const text2 = await pollResponse.text();
@@ -271,39 +221,65 @@ function ChatPage(props) {
       const lastLine = lines2[lines2.length - 1];
       const data = JSON.parse(lastLine.replace('data: ', ''));
       const assistantMsgs = data[0].filter(m => m.role === 'assistant');
-      const botReply = assistantMsgs[assistantMsgs.length - 1]?.content?.[0]?.text || 'No response received';
+      const botReply = assistantMsgs[assistantMsgs.length - 1]?.content?.[0]?.text || '';
 
-      setMessages(prev => [...prev, {
-        role: 'assistant', content: botReply,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }]);
-
-      await upsertConversation(text, botReply);
-
+      // Parse AI slots
       const aiSlots = parseSlots(botReply.replace('Detected Dialogue State:\n', '').replace(/•\s/g, ''));
       const slots = Object.keys(aiSlots).length > 0 ? aiSlots : userSlots;
       const hasHotel = Object.keys(slots).some(k => k.startsWith('hotel-'));
       const hasRestaurant = Object.keys(slots).some(k => k.startsWith('restaurant-'));
       const hasAttraction = Object.keys(slots).some(k => k.startsWith('attraction-'));
+      const hasTaxi = Object.keys(slots).some(k => k.startsWith('taxi-'));
 
-      if (hasHotel || (mentionsHotel && !mentionsRestaurant && !mentionsAttraction)) {
-        const results = searchHotels(slots);
-        if (results.length > 0) { setSearchResults(results); setSearchType('hotel'); }
-      } else if (hasRestaurant || (mentionsRestaurant && !mentionsHotel && !mentionsAttraction)) {
-        const results = searchRestaurants(slots);
-        if (results.length > 0) { setSearchResults(results); setSearchType('restaurant'); }
-      } else if (hasAttraction || (mentionsAttraction && !mentionsHotel && !mentionsRestaurant)) {
-        const results = searchAttractions(slots);
-        if (results.length > 0) { setSearchResults(results); setSearchType('attraction'); }
+      // Determine domain
+      const domain = hasHotel ? 'hotel'
+        : hasRestaurant ? 'restaurant'
+        : hasAttraction ? 'attraction'
+        : hasTaxi ? 'taxi'
+        : mentionsHotel ? 'hotel'
+        : mentionsRestaurant ? 'restaurant'
+        : mentionsAttraction ? 'attraction'
+        : mentionsTaxi ? 'taxi'
+        : null;
+
+      // Get results
+      let results = [];
+      if (domain === 'hotel') results = searchHotels(slots);
+      else if (domain === 'restaurant') results = searchRestaurants(slots);
+      else if (domain === 'attraction') results = searchAttractions(slots);
+      else if (domain === 'taxi') results = searchTaxis(slots);
+
+      // Build response message
+      let displayReply = botReply;
+
+      if (domain && results.length > 0) {
+        // Show AI reply + found results
+        const domainEmoji = domain === 'hotel' ? '🏨' : domain === 'restaurant' ? '🍽️' : domain === 'taxi' ? '🚖' : '🎭';
+        displayReply = botReply || `${domainEmoji} Found ${results.length} ${domain}(s) matching your request!`;
+        setSearchResults(results);
+        setSearchType(domain);
+      } else if (domain && results.length === 0) {
+        // Domain detected but no results
+        displayReply = `😕 I couldn't find any ${domain}s matching your exact criteria.\n\nTry adjusting your search — for example:\n• Remove the area filter\n• Try a different price range\n• Try a different cuisine type`;
+        setSearchResults(null);
+        setSearchType('');
+      } else if (!botReply || botReply.trim() === '' || botReply === 'No response received') {
+        // No domain, no AI reply — unknown message
+        displayReply = `🤔 I'm not sure I understood that.\n\nI can help you with:\n🏨 **Hotels** — "I need a cheap hotel in the centre"\n🍽️ **Restaurants** — "Find me an Italian restaurant"\n🎭 **Attractions** — "Looking for a museum"\n🚖 **Taxis** — "Book a taxi"\n\nType **"help"** to see everything I can do!`;
+        setSearchResults(null);
+        setSearchType('');
       } else {
-        setSearchResults(null); setSearchType('');
+        // AI replied but no domain — could be a general conversation
+        setSearchResults(null);
+        setSearchType('');
       }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: displayReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      await upsertConversation(text, displayReply);
+
     } catch (error) {
       console.error('sendMessage error:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant', content: '⚠️ Could not connect to AI. Please try again.',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Could not connect to AI. Please try again.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
     }
     setIsLoading(false);
   };
@@ -314,14 +290,14 @@ function ChatPage(props) {
       {/* Logout modal */}
       <AnimatePresence>
         {showLogoutModal && (
-          <motion.div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div style={{ background: 'rgba(15,12,41,0.98)', backdropFilter: 'blur(30px)', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 340, border: '1px solid rgba(255,255,255,0.15)', textAlign: 'center' }} initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
               <div style={{ fontSize: 40, marginBottom: 14 }}>👋</div>
               <h3 style={{ color: 'white', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Sign out?</h3>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Your conversations are saved. You can sign back in anytime.</p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <motion.button onClick={() => setShowLogoutModal(false)} style={{ flex: 1, padding: '11px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)' }} whileTap={{ scale: 0.98 }}>Cancel</motion.button>
-                <motion.button onClick={handleLogout} style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg, #f5576c, #f093fb)', border: 'none', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Sign Out</motion.button>
+                <motion.button onClick={() => setShowLogoutModal(false)} style={{ flex: 1, padding: '11px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)' }}>Cancel</motion.button>
+                <motion.button onClick={handleLogout} style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg, #f5576c, #f093fb)', border: 'none', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer' }} whileHover={{ scale: 1.02 }}>Sign Out</motion.button>
               </div>
             </motion.div>
           </motion.div>
@@ -331,14 +307,14 @@ function ChatPage(props) {
       {/* Delete confirm modal */}
       <AnimatePresence>
         {deleteConfirmId && (
-          <motion.div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div style={{ background: 'rgba(15,12,41,0.98)', backdropFilter: 'blur(30px)', borderRadius: 20, padding: '28px', width: '100%', maxWidth: 320, border: '1px solid rgba(245,87,108,0.3)', textAlign: 'center' }} initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>🗑️</div>
               <h3 style={{ color: 'white', fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Delete conversation?</h3>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 22 }}>This cannot be undone.</p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <motion.button onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)' }} whileTap={{ scale: 0.98 }}>Cancel</motion.button>
-                <motion.button onClick={() => deleteConversation(deleteConfirmId)} style={{ flex: 1, padding: '10px', background: 'rgba(245,87,108,0.85)', border: 'none', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Delete</motion.button>
+                <motion.button onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: '10px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)' }}>Cancel</motion.button>
+                <motion.button onClick={() => deleteConversation(deleteConfirmId)} style={{ flex: 1, padding: '10px', background: 'rgba(245,87,108,0.85)', border: 'none', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }} whileHover={{ scale: 1.02 }}>Delete</motion.button>
               </div>
             </motion.div>
           </motion.div>
@@ -348,7 +324,7 @@ function ChatPage(props) {
       {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && isMobile && (
-          <motion.div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', zIndex: 10 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)} />
+          <motion.div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 10 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSidebarOpen(false)} />
         )}
       </AnimatePresence>
 
@@ -356,83 +332,31 @@ function ChatPage(props) {
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div style={{ width: 280, background: 'rgba(15,12,41,0.97)', backdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', position: isMobile ? 'fixed' : 'relative', top: 0, left: 0, height: '100vh', zIndex: isMobile ? 20 : 'auto' }} initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} transition={{ duration: 0.3 }}>
-
-            {/* Logo */}
             <motion.div onClick={() => navigate('/')} style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.05)' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🎯</div>
               <span style={{ fontSize: 18, fontWeight: 900, background: 'linear-gradient(135deg, #667eea, #f093fb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AMDDST</span>
             </motion.div>
 
-            {/* New Chat button */}
             <div style={{ padding: '15px' }}>
-              <motion.button
-                onClick={() => {
-                  currentSessionId.current = `session_${Date.now()}`;
-                  currentSessionDocId.current = null;
-                  setSessionMessages([]);
-                  setSearchResults(null);
-                  setMessages([{
-                    role: 'assistant',
-                    content: '👋 Starting fresh! What are you looking for today?',
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                  }]);
-                  if (isMobile) setSidebarOpen(false);
-                }}
-                style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14, boxShadow: '0 4px 15px rgba(102,126,234,0.3)' }}
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              >✨ New Conversation</motion.button>
+              <motion.button onClick={() => { currentSessionId.current = `session_${Date.now()}`; currentSessionDocId.current = null; setSessionMessages([]); setSearchResults(null); setMessages([{ role: 'assistant', content: '👋 Starting fresh! What are you looking for today?\n\n🏨 Hotel · 🍽️ Restaurant · 🎭 Attraction · 🚖 Taxi', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]); if (isMobile) setSidebarOpen(false); }} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14, boxShadow: '0 4px 15px rgba(102,126,234,0.3)' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>✨ New Conversation</motion.button>
             </div>
 
-            {/* Conversations */}
             <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto' }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: 1.5, marginBottom: 10, textTransform: 'uppercase', padding: '0 4px' }}>Recent Conversations</p>
               {pageLoading ? <ConversationSkeleton /> : conversations.length > 0 ? conversations.map(conv => (
-                <div
-                  key={conv.id}
-                  style={{ position: 'relative', marginBottom: 4 }}
-                  onMouseEnter={() => setHoveredConvId(conv.id)}
-                  onMouseLeave={() => setHoveredConvId(null)}
-                >
-                  <motion.div
-                    style={{
-                      padding: '10px 36px 10px 10px', borderRadius: 10, cursor: 'pointer',
-                      background: currentSessionDocId.current === conv.id ? 'rgba(102,126,234,0.2)' : 'transparent',
-                      border: currentSessionDocId.current === conv.id ? '1px solid rgba(102,126,234,0.35)' : '1px solid transparent',
-                      display: 'flex', gap: 8, alignItems: 'center',
-                    }}
-                    whileHover={{ background: currentSessionDocId.current === conv.id ? 'rgba(102,126,234,0.25)' : 'rgba(255,255,255,0.07)' }}
-                    onClick={() => loadPastConversation(conv)}
-                  >
+                <div key={conv.id} style={{ position: 'relative', marginBottom: 4 }} onMouseEnter={() => setHoveredConvId(conv.id)} onMouseLeave={() => setHoveredConvId(null)}>
+                  <motion.div style={{ padding: '10px 36px 10px 10px', borderRadius: 10, cursor: 'pointer', background: currentSessionDocId.current === conv.id ? 'rgba(102,126,234,0.2)' : 'transparent', border: currentSessionDocId.current === conv.id ? '1px solid rgba(102,126,234,0.35)' : '1px solid transparent', display: 'flex', gap: 8, alignItems: 'center' }} whileHover={{ background: currentSessionDocId.current === conv.id ? 'rgba(102,126,234,0.25)' : 'rgba(255,255,255,0.07)' }} onClick={() => loadPastConversation(conv)}>
                     <FiMessageSquare size={13} style={{ color: currentSessionDocId.current === conv.id ? '#a78bfa' : 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontSize: 12, fontWeight: 600, color: currentSessionDocId.current === conv.id ? 'white' : 'rgba(255,255,255,0.8)', marginBottom: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.title}</p>
                       <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.preview}</p>
                     </div>
                   </motion.div>
-
-                  {/* Delete button */}
-                  <motion.button
-                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(conv.id); }}
-                    style={{
-                      position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
-                      background: 'rgba(245,87,108,0.15)', border: '1px solid rgba(245,87,108,0.3)',
-                      borderRadius: 6, width: 24, height: 24,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      cursor: 'pointer', color: '#f5576c',
-                      opacity: hoveredConvId === conv.id ? 1 : 0,
-                      transition: 'opacity 0.15s',
-                    }}
-                    whileHover={{ background: 'rgba(245,87,108,0.35)', scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    title="Delete"
-                  ><FiTrash2 size={11} /></motion.button>
+                  <motion.button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(conv.id); }} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(245,87,108,0.15)', border: '1px solid rgba(245,87,108,0.3)', borderRadius: 6, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f5576c', opacity: hoveredConvId === conv.id ? 1 : 0, transition: 'opacity 0.15s' }} whileHover={{ background: 'rgba(245,87,108,0.35)', scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Delete"><FiTrash2 size={11} /></motion.button>
                 </div>
-              )) : (
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '10px 4px' }}>No conversations yet. Start chatting!</p>
-              )}
+              )) : <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '10px 4px' }}>No conversations yet. Start chatting!</p>}
             </div>
 
-            {/* User profile */}
             <div style={{ padding: '15px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
               {props.isGuest ? (
                 <motion.button onClick={() => navigate('/login')} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14 }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Sign In to Save History ✨</motion.button>
@@ -453,7 +377,6 @@ function ChatPage(props) {
 
       {/* Main chat */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-
         {/* Header */}
         <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <motion.button onClick={() => navigate('/')} title="Home" style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} whileHover={{ color: 'white', background: 'rgba(255,255,255,0.12)', scale: 1.05 }} whileTap={{ scale: 0.95 }}><FiHome size={16} /></motion.button>
@@ -473,9 +396,7 @@ function ChatPage(props) {
                 <motion.button onClick={() => setShowLogoutModal(true)} title="Sign out" style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(245,87,108,0.1)', border: '1px solid rgba(245,87,108,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f5576c' }} whileHover={{ background: 'rgba(245,87,108,0.2)', scale: 1.05 }} whileTap={{ scale: 0.95 }}><FiLogOut size={14} /></motion.button>
               </>
             )}
-            {showInstall && (
-              <motion.button onClick={handleInstall} style={{ padding: '5px 12px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer' }} whileHover={{ scale: 1.05 }}>📱 Install</motion.button>
-            )}
+            {showInstall && <motion.button onClick={async () => { installPrompt.prompt(); const r = await installPrompt.userChoice; if (r.outcome === 'accepted') setShowInstall(false); }} style={{ padding: '5px 12px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer' }} whileHover={{ scale: 1.05 }}>📱 Install</motion.button>}
           </div>
         </div>
 
@@ -497,9 +418,7 @@ function ChatPage(props) {
                 {messages.map((msg, index) => (
                   <React.Fragment key={index}>
                     <motion.div style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 10 }} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3 }}>
-                      {msg.role === 'assistant' && (
-                        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, alignSelf: 'flex-start', marginTop: 4, boxShadow: '0 4px 12px rgba(102,126,234,0.4)' }}>🎯</div>
-                      )}
+                      {msg.role === 'assistant' && <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, alignSelf: 'flex-start', marginTop: 4, boxShadow: '0 4px 12px rgba(102,126,234,0.4)' }}>🎯</div>}
                       <div style={{ maxWidth: isMobile ? '85%' : '72%' }}>
                         <div style={{ padding: '13px 17px', borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: msg.role === 'user' ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'rgba(255,255,255,0.08)', color: 'white', fontSize: 14, lineHeight: 1.6, backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none', border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,0.1)' : 'none', boxShadow: msg.role === 'user' ? '0 4px 20px rgba(102,126,234,0.4)' : '0 4px 15px rgba(0,0,0,0.2)' }}>
                           <span dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
@@ -507,20 +426,13 @@ function ChatPage(props) {
                         {Array.isArray(msg.actions) && msg.actions.length > 0 && (
                           <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                             {msg.actions.map((action, ai) => (
-                              <motion.button
-                                key={ai}
-                                onClick={() => { if (typeof action.onClick === 'function') { action.onClick(); } else if (action.query) { sendMessage(action.query); } }}
-                                style={{ padding: '7px 14px', background: ai === 0 ? 'rgba(67,233,123,0.15)' : 'rgba(102,126,234,0.15)', border: `1px solid ${ai === 0 ? 'rgba(67,233,123,0.4)' : 'rgba(102,126,234,0.4)'}`, borderRadius: 20, fontSize: 12, color: ai === 0 ? '#43e97b' : '#a78bfa', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
-                                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                              >{action.label}</motion.button>
+                              <motion.button key={ai} onClick={() => { if (typeof action.onClick === 'function') { action.onClick(); } else if (action.query) { sendMessage(action.query); } }} style={{ padding: '7px 14px', background: ai === 0 ? 'rgba(67,233,123,0.15)' : 'rgba(102,126,234,0.15)', border: `1px solid ${ai === 0 ? 'rgba(67,233,123,0.4)' : 'rgba(102,126,234,0.4)'}`, borderRadius: 20, fontSize: 12, color: ai === 0 ? '#43e97b' : '#a78bfa', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>{action.label}</motion.button>
                             ))}
                           </div>
                         )}
                         <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 5, textAlign: msg.role === 'user' ? 'right' : 'left' }}>{msg.time}</p>
                       </div>
-                      {msg.role === 'user' && (
-                        <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #f093fb, #f5576c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{userInitial}</div>
-                      )}
+                      {msg.role === 'user' && <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #f093fb, #f5576c)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{userInitial}</div>}
                     </motion.div>
                     {index === messages.length - 1 && msg.role === 'assistant' && searchResults && searchResults.length > 0 && (
                       <motion.div style={{ paddingLeft: isMobile ? 0 : 44 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
@@ -548,17 +460,17 @@ function ChatPage(props) {
         <div style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 4 }}>
             {[
-              { text: 'Cheap hotel', query: 'I need a cheap hotel in the centre' },
-              { text: 'Indian food', query: 'Find me an Indian restaurant' },
-              { text: 'Museum', query: 'Looking for a museum to visit' },
-              { text: 'Free parking', query: 'Hotel with free parking' },
+              { text: '🏨 Cheap hotel', query: 'I need a cheap hotel in the centre' },
+              { text: '🍽️ Indian food', query: 'Find me an Indian restaurant' },
+              { text: '🎭 Museum', query: 'Looking for a museum to visit' },
+              { text: '🚖 Taxi', query: 'I need a taxi' },
             ].map(s => (
               <motion.button key={s.text} onClick={() => sendMessage(s.query)} style={{ padding: '6px 14px', background: 'rgba(102,126,234,0.12)', border: '1px solid rgba(102,126,234,0.25)', borderRadius: 20, fontSize: 12, color: '#a78bfa', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }} whileHover={{ background: 'rgba(102,126,234,0.25)', scale: 1.03 }} whileTap={{ scale: 0.95 }}>{s.text}</motion.button>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: '8px 12px' }}>
             <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }} />
-            <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 2 }}>
               <motion.button onClick={() => fileInputRef.current.click()} style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><FiPaperclip size={18} /></motion.button>
               <motion.button
                 onClick={() => {
@@ -577,15 +489,16 @@ function ChatPage(props) {
               >{isRecording ? <FiMicOff size={18} /> : <FiMic size={18} />}</motion.button>
             </div>
             <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
-            <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage(input)} placeholder="Ask about hotels, restaurants, attractions..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: 14, padding: '4px 8px', minWidth: 0 }} />
+            <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage(input)} placeholder="Ask about hotels, restaurants, attractions, taxis..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: 14, padding: '4px 8px', minWidth: 0 }} />
             <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
-            <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 2 }}>
               {!isMobile && (
                 <>
-                  <motion.button onClick={() => sendMessage('Show me available hotels')} style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdHotel size={20} /></motion.button>
-                  <motion.button onClick={() => sendMessage('Find me a restaurant')} style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdRestaurant size={20} /></motion.button>
-                  <motion.button onClick={() => sendMessage('What attractions are nearby')} style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdAttractions size={20} /></motion.button>
-                  <motion.button onClick={() => navigate('/bookings')} style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><FiBookmark size={18} /></motion.button>
+                  <motion.button onClick={() => sendMessage('I need a hotel')} title="Hotels" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdHotel size={20} /></motion.button>
+                  <motion.button onClick={() => sendMessage('Find me a restaurant')} title="Restaurants" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdRestaurant size={20} /></motion.button>
+                  <motion.button onClick={() => sendMessage('What attractions are nearby')} title="Attractions" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdAttractions size={20} /></motion.button>
+                  <motion.button onClick={() => sendMessage('I need a taxi')} title="Taxis" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdLocalTaxi size={20} /></motion.button>
+                  <motion.button onClick={() => navigate('/bookings')} title="History" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><FiBookmark size={18} /></motion.button>
                   <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
                 </>
               )}
