@@ -10,25 +10,89 @@ import { searchHotels, searchRestaurants, searchAttractions, searchTaxis, parseS
 import SearchResults from './SearchResults';
 import { ChatSkeleton, ConversationSkeleton } from './SkeletonLoader';
 
-// ── SMART RESPONSE ENGINE ─────────────────────────────────────────────────────
 function getSmartResponse(text, userName) {
   const name = userName ? `, ${userName}` : '';
-
   if (isGreeting(text)) {
-    return {
-      type: 'greeting',
-      message: `👋 Hello${name}! Welcome to AMDDST — your AI travel assistant.\n\nI can help you with:\n🏨 **Hotels** — find and book hotels\n🍽️ **Restaurants** — discover dining spots\n🎭 **Attractions** — explore museums, theatres, parks\n🚖 **Taxis** — book a cab\n\nWhat are you looking for today?`,
-    };
+    return { message: `👋 Hello${name}! Welcome to AMDDST — your AI travel assistant.\n\nI can help you with:\n🏨 **Hotels** — find and book hotels\n🍽️ **Restaurants** — discover dining spots\n🎭 **Attractions** — explore museums, theatres, parks\n🚖 **Taxis** — book a cab\n\nWhat are you looking for today?` };
   }
-
   if (isAppInfoQuery(text)) {
-    return {
-      type: 'info',
-      message: `🎯 **Here's what I can do:**\n\n🏨 **Hotels** — Find hotels by area, price, parking, WiFi, star rating\n🍽️ **Restaurants** — Find restaurants by cuisine, area, price range\n🎭 **Attractions** — Find museums, cinemas, theatres, parks\n🚖 **Taxis** — Book a taxi for any destination\n\n💡 **Try saying:**\n• "I need a cheap hotel in the centre with free parking"\n• "Find me an Italian restaurant"\n• "Looking for a museum to visit"\n• "Book a taxi"\n\nAll data is based on Cambridge, UK — powered by the MultiWOZ dataset and DSTC10 3rd place AI model.`,
-    };
+    return { message: `🎯 **Here's what I can do:**\n\n🏨 **Hotels** — Find hotels by area, price, parking, WiFi, star rating\n🍽️ **Restaurants** — Find restaurants by cuisine, area, price range\n🎭 **Attractions** — Find museums, cinemas, theatres, parks\n🚖 **Taxis** — Book a taxi for any destination\n\n💡 **Try saying:**\n• "I need a cheap hotel in the centre with free parking"\n• "Find me an Italian restaurant"\n• "Looking for a museum to visit"\n• "Book a taxi"\n\nAll data is based on Cambridge, UK — powered by the MultiWOZ dataset and DSTC10 3rd place AI model.` };
   }
-
   return null;
+}
+
+// Detect domain FIRST before extracting slots
+function detectDomainFromText(text) {
+  const t = text.toLowerCase();
+  // Taxi words — check FIRST, highest priority explicit keywords
+  const taxiWords = ['taxi', 'cab', 'ride', 'uber', 'pickup', 'pick up', 'driver', 'car service', 'book a car', 'need a car', 'get a cab'];
+  if (taxiWords.some(w => t.includes(w))) return 'taxi';
+  // Hotel words
+  const hotelWords = ['hotel', 'stay', 'room', 'accommodation', 'guesthouse', 'lodge', 'bed and breakfast', 'b&b', 'hostel', 'overnight', 'check in', 'checkin'];
+  if (hotelWords.some(w => t.includes(w))) return 'hotel';
+  // Restaurant words
+  const restaurantWords = ['restaurant', 'food', 'eat', 'dining', 'dinner', 'lunch', 'cafe', 'cuisine', 'indian', 'chinese', 'italian', 'thai', 'mexican', 'british', 'mediterranean', 'portuguese', 'european'];
+  if (restaurantWords.some(w => t.includes(w))) return 'restaurant';
+  // Attraction words
+  const attractionWords = ['museum', 'attraction', 'visit', 'theatre', 'theater', 'cinema', 'movie', 'park', 'gallery', 'church', 'college', 'sightseeing', 'explore', 'tourist'];
+  if (attractionWords.some(w => t.includes(w))) return 'attraction';
+  return null;
+}
+
+function extractSlotsByDomain(text, domain) {
+  const slots = {};
+  const t = text.toLowerCase();
+  if (domain === 'taxi') {
+    if (t.includes('cheap') || t.includes('budget')) slots['taxi-pricerange'] = 'cheap';
+    if (t.includes('expensive') || t.includes('luxury')) slots['taxi-pricerange'] = 'expensive';
+    if (t.includes('moderate')) slots['taxi-pricerange'] = 'moderate';
+    return slots;
+  }
+  if (domain === 'hotel') {
+    if (t.includes('cheap') || t.includes('budget')) slots['hotel-pricerange'] = 'cheap';
+    if (t.includes('moderate') || t.includes('mid')) slots['hotel-pricerange'] = 'moderate';
+    if (t.includes('expensive') || t.includes('luxury')) slots['hotel-pricerange'] = 'expensive';
+    if (t.includes('centre') || t.includes('center') || t.includes('central')) slots['hotel-area'] = 'centre';
+    if (t.includes('north')) slots['hotel-area'] = 'north';
+    if (t.includes('south')) slots['hotel-area'] = 'south';
+    if (t.includes('east')) slots['hotel-area'] = 'east';
+    if (t.includes('west')) slots['hotel-area'] = 'west';
+    if (t.includes('parking')) slots['hotel-parking'] = 'yes';
+    if (t.includes('internet') || t.includes('wifi')) slots['hotel-internet'] = 'yes';
+    return slots;
+  }
+  if (domain === 'restaurant') {
+    if (t.includes('cheap') || t.includes('budget')) slots['restaurant-pricerange'] = 'cheap';
+    if (t.includes('moderate') || t.includes('mid')) slots['restaurant-pricerange'] = 'moderate';
+    if (t.includes('expensive') || t.includes('luxury')) slots['restaurant-pricerange'] = 'expensive';
+    if (t.includes('centre') || t.includes('center') || t.includes('central')) slots['restaurant-area'] = 'centre';
+    if (t.includes('north')) slots['restaurant-area'] = 'north';
+    if (t.includes('south')) slots['restaurant-area'] = 'south';
+    if (t.includes('east')) slots['restaurant-area'] = 'east';
+    if (t.includes('west')) slots['restaurant-area'] = 'west';
+    if (t.includes('indian')) slots['restaurant-food'] = 'indian';
+    if (t.includes('chinese')) slots['restaurant-food'] = 'chinese';
+    if (t.includes('italian')) slots['restaurant-food'] = 'italian';
+    if (t.includes('thai')) slots['restaurant-food'] = 'thai';
+    if (t.includes('british')) slots['restaurant-food'] = 'british';
+    if (t.includes('mediterranean')) slots['restaurant-food'] = 'mediterranean';
+    if (t.includes('mexican')) slots['restaurant-food'] = 'mexican';
+    if (t.includes('portuguese')) slots['restaurant-food'] = 'portuguese';
+    return slots;
+  }
+  if (domain === 'attraction') {
+    if (t.includes('centre') || t.includes('center') || t.includes('central')) slots['attraction-area'] = 'centre';
+    if (t.includes('north')) slots['attraction-area'] = 'north';
+    if (t.includes('east')) slots['attraction-area'] = 'east';
+    if (t.includes('west')) slots['attraction-area'] = 'west';
+    if (t.includes('museum')) slots['attraction-type'] = 'museum';
+    if (t.includes('theatre') || t.includes('theater')) slots['attraction-type'] = 'theatre';
+    if (t.includes('cinema') || t.includes('movie')) slots['attraction-type'] = 'cinema';
+    if (t.includes('park')) slots['attraction-type'] = 'park';
+    if (t.includes('gallery')) slots['attraction-type'] = 'museum';
+    return slots;
+  }
+  return slots;
 }
 
 function ChatPage(props) {
@@ -67,7 +131,6 @@ function ChatPage(props) {
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); setInstallPrompt(e); setShowInstall(true); });
   }, []);
-
   useEffect(() => {
     const loadConversations = async () => {
       if (!props.user) return;
@@ -130,7 +193,7 @@ function ChatPage(props) {
       `${emoji} **${item.name}**`,
       `📍 **Address:** ${item.address}`,
       `📞 **Phone:** ${item.phone || 'N/A'}`,
-      `💰 **Price:** ${item.pricerange || 'N/A'}`,
+      item.pricerange ? `💰 **Price:** ${item.pricerange}` : null,
       item.area ? `🗺️ **Area:** ${item.area}` : null,
       item.stars ? `⭐ **Stars:** ${item.stars} stars` : null,
       item.food ? `🍴 **Cuisine:** ${item.food}` : null,
@@ -138,6 +201,7 @@ function ChatPage(props) {
       item.parking === 'yes' ? `🅿️ **Parking:** Available` : null,
       item.internet === 'yes' ? `📶 **WiFi:** Available` : null,
       item.fee ? `💵 **Entry Fee:** ${item.fee}` : null,
+      type === 'taxi' ? `🚖 **Available:** 24/7` : null,
     ].filter(Boolean).join('\n');
 
     setMessages(prev => [...prev, {
@@ -152,37 +216,6 @@ function ChatPage(props) {
     setSearchResults(null);
   };
 
-  const extractFromUserMessage = (text) => {
-    const slots = {};
-    const t = text.toLowerCase();
-    if (t.includes('cheap') || t.includes('budget')) slots['hotel-pricerange'] = 'cheap';
-    if (t.includes('moderate') || t.includes('mid')) slots['hotel-pricerange'] = 'moderate';
-    if (t.includes('expensive') || t.includes('luxury')) slots['hotel-pricerange'] = 'expensive';
-    if (t.includes('centre') || t.includes('center') || t.includes('central')) { slots['hotel-area'] = 'centre'; slots['restaurant-area'] = 'centre'; slots['attraction-area'] = 'centre'; }
-    if (t.includes('north')) { slots['hotel-area'] = 'north'; slots['restaurant-area'] = 'north'; slots['attraction-area'] = 'north'; }
-    if (t.includes('south')) { slots['hotel-area'] = 'south'; slots['restaurant-area'] = 'south'; }
-    if (t.includes('east')) { slots['hotel-area'] = 'east'; slots['restaurant-area'] = 'east'; slots['attraction-area'] = 'east'; }
-    if (t.includes('west')) { slots['hotel-area'] = 'west'; slots['restaurant-area'] = 'west'; slots['attraction-area'] = 'west'; }
-    if (t.includes('indian')) slots['restaurant-food'] = 'indian';
-    if (t.includes('chinese')) slots['restaurant-food'] = 'chinese';
-    if (t.includes('italian')) slots['restaurant-food'] = 'italian';
-    if (t.includes('thai')) slots['restaurant-food'] = 'thai';
-    if (t.includes('british')) slots['restaurant-food'] = 'british';
-    if (t.includes('mediterranean')) slots['restaurant-food'] = 'mediterranean';
-    if (t.includes('mexican')) slots['restaurant-food'] = 'mexican';
-    if (t.includes('portuguese')) slots['restaurant-food'] = 'portuguese';
-    if (t.includes('museum')) slots['attraction-type'] = 'museum';
-    if (t.includes('theatre') || t.includes('theater')) slots['attraction-type'] = 'theatre';
-    if (t.includes('cinema') || t.includes('movie')) slots['attraction-type'] = 'cinema';
-    if (t.includes('park')) slots['attraction-type'] = 'park';
-    if (t.includes('gallery')) slots['attraction-type'] = 'museum';
-    if (t.includes('parking')) slots['hotel-parking'] = 'yes';
-    if (t.includes('internet') || t.includes('wifi')) slots['hotel-internet'] = 'yes';
-    if (t.includes('cheap') || t.includes('budget')) slots['taxi-pricerange'] = 'cheap';
-    if (t.includes('expensive') || t.includes('luxury')) slots['taxi-pricerange'] = 'expensive';
-    return slots;
-  };
-
   const sendMessage = async (text) => {
     if (!text.trim()) return;
     if (isMobile) setSidebarOpen(false);
@@ -193,27 +226,25 @@ function ChatPage(props) {
     setIsLoading(true);
     setSearchResults(null);
 
-    // ── SMART LOCAL RESPONSES (no AI call needed) ──────────────────
+    // Step 1 — Smart local responses (greetings, help)
     const smartResponse = getSmartResponse(text, userName);
     if (smartResponse) {
       setTimeout(() => {
         setMessages(prev => [...prev, { role: 'assistant', content: smartResponse.message, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
         setIsLoading(false);
-      }, 600);
+      }, 500);
       return;
     }
 
-    // ── DOMAIN DETECTION ──────────────────────────────────────────
-    const userSlots = extractFromUserMessage(text);
-    const t = text.toLowerCase();
-    const mentionsHotel = t.includes('hotel') || t.includes('stay') || t.includes('room') || t.includes('accommodation') || t.includes('guesthouse') || t.includes('hostel') || t.includes('lodge') || t.includes('b&b');
-    const mentionsRestaurant = t.includes('restaurant') || t.includes('food') || t.includes('eat') || t.includes('dining') || t.includes('dinner') || t.includes('lunch') || t.includes('cafe') || t.includes('indian') || t.includes('chinese') || t.includes('italian') || t.includes('thai') || t.includes('mexican') || t.includes('british') || t.includes('mediterranean') || t.includes('portuguese');
-    const mentionsAttraction = t.includes('museum') || t.includes('attraction') || t.includes('visit') || t.includes('theatre') || t.includes('cinema') || t.includes('park') || t.includes('gallery') || t.includes('sightseeing') || t.includes('explore');
-    const mentionsTaxi = t.includes('taxi') || t.includes('cab') || t.includes('ride') || t.includes('uber') || t.includes('pickup') || t.includes('pick up') || t.includes('driver') || t.includes('transport') || t.includes('book a car');
+    // Step 2 — Detect domain from user message FIRST
+    const userDomain = detectDomainFromText(text);
+    const userSlots = userDomain ? extractSlotsByDomain(text, userDomain) : {};
 
     try {
-      // Call AI
-      const response = await fetch('https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [text, []] }) });
+      // Step 3 — Call AI model
+      const response = await fetch('https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [text, []] })
+      });
       const result = await response.json();
       const pollResponse = await fetch(`https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat/${result.event_id}`);
       const text2 = await pollResponse.text();
@@ -223,63 +254,61 @@ function ChatPage(props) {
       const assistantMsgs = data[0].filter(m => m.role === 'assistant');
       const botReply = assistantMsgs[assistantMsgs.length - 1]?.content?.[0]?.text || '';
 
-      // Parse AI slots
+      // Step 4 — Parse AI slots
       const aiSlots = parseSlots(botReply.replace('Detected Dialogue State:\n', '').replace(/•\s/g, ''));
-      const slots = Object.keys(aiSlots).length > 0 ? aiSlots : userSlots;
-      const hasHotel = Object.keys(slots).some(k => k.startsWith('hotel-'));
-      const hasRestaurant = Object.keys(slots).some(k => k.startsWith('restaurant-'));
-      const hasAttraction = Object.keys(slots).some(k => k.startsWith('attraction-'));
-      const hasTaxi = Object.keys(slots).some(k => k.startsWith('taxi-'));
 
-      // Determine domain
-      const domain = hasHotel ? 'hotel'
-        : hasRestaurant ? 'restaurant'
-        : hasAttraction ? 'attraction'
-        : hasTaxi ? 'taxi'
-        : mentionsHotel ? 'hotel'
-        : mentionsRestaurant ? 'restaurant'
-        : mentionsAttraction ? 'attraction'
-        : mentionsTaxi ? 'taxi'
-        : null;
+      // Step 5 — Final domain: user message domain takes priority over AI slots
+      // This prevents "I need a taxi" from being classified as hotel
+      let finalDomain = userDomain;
+      let finalSlots = userSlots;
 
-      // Get results
+      if (!finalDomain && Object.keys(aiSlots).length > 0) {
+        // No user domain detected, use AI slots
+        if (Object.keys(aiSlots).some(k => k.startsWith('taxi-'))) { finalDomain = 'taxi'; finalSlots = aiSlots; }
+        else if (Object.keys(aiSlots).some(k => k.startsWith('hotel-'))) { finalDomain = 'hotel'; finalSlots = aiSlots; }
+        else if (Object.keys(aiSlots).some(k => k.startsWith('restaurant-'))) { finalDomain = 'restaurant'; finalSlots = aiSlots; }
+        else if (Object.keys(aiSlots).some(k => k.startsWith('attraction-'))) { finalDomain = 'attraction'; finalSlots = aiSlots; }
+      }
+
+      // Step 6 — Search database
       let results = [];
-      if (domain === 'hotel') results = searchHotels(slots);
-      else if (domain === 'restaurant') results = searchRestaurants(slots);
-      else if (domain === 'attraction') results = searchAttractions(slots);
-      else if (domain === 'taxi') results = searchTaxis(slots);
+      if (finalDomain === 'hotel') results = searchHotels(finalSlots);
+      else if (finalDomain === 'restaurant') results = searchRestaurants(finalSlots);
+      else if (finalDomain === 'attraction') results = searchAttractions(finalSlots);
+      else if (finalDomain === 'taxi') results = searchTaxis(finalSlots);
 
-      // Build response message
+      // Step 7 — Build display reply
       let displayReply = botReply;
-
-      if (domain && results.length > 0) {
-        // Show AI reply + found results
-        const domainEmoji = domain === 'hotel' ? '🏨' : domain === 'restaurant' ? '🍽️' : domain === 'taxi' ? '🚖' : '🎭';
-        displayReply = botReply || `${domainEmoji} Found ${results.length} ${domain}(s) matching your request!`;
+      if (finalDomain && results.length > 0) {
+        const emoji = finalDomain === 'hotel' ? '🏨' : finalDomain === 'restaurant' ? '🍽️' : finalDomain === 'taxi' ? '🚖' : '🎭';
+        displayReply = botReply || `${emoji} Found ${results.length} ${finalDomain}(s) for you!`;
         setSearchResults(results);
-        setSearchType(domain);
-      } else if (domain && results.length === 0) {
-        // Domain detected but no results
-        displayReply = `😕 I couldn't find any ${domain}s matching your exact criteria.\n\nTry adjusting your search — for example:\n• Remove the area filter\n• Try a different price range\n• Try a different cuisine type`;
+        setSearchType(finalDomain);
+      } else if (finalDomain && results.length === 0) {
+        displayReply = `😕 No ${finalDomain}s found matching your criteria.\n\nTry:\n• A different area (centre, north, east, west)\n• A different price range\n• Fewer filters`;
         setSearchResults(null);
         setSearchType('');
-      } else if (!botReply || botReply.trim() === '' || botReply === 'No response received') {
-        // No domain, no AI reply — unknown message
-        displayReply = `🤔 I'm not sure I understood that.\n\nI can help you with:\n🏨 **Hotels** — "I need a cheap hotel in the centre"\n🍽️ **Restaurants** — "Find me an Italian restaurant"\n🎭 **Attractions** — "Looking for a museum"\n🚖 **Taxis** — "Book a taxi"\n\nType **"help"** to see everything I can do!`;
+      } else if (!finalDomain && (!botReply || botReply.trim() === '')) {
+        displayReply = `🤔 I'm not sure I understood that.\n\nI can help with:\n🏨 **Hotels** · 🍽️ **Restaurants** · 🎭 **Attractions** · 🚖 **Taxis**\n\nType **"help"** to see examples!`;
         setSearchResults(null);
         setSearchType('');
       } else {
-        // AI replied but no domain — could be a general conversation
         setSearchResults(null);
         setSearchType('');
       }
 
-      setMessages(prev => [...prev, { role: 'assistant', content: displayReply, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant', content: displayReply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
       await upsertConversation(text, displayReply);
 
     } catch (error) {
       console.error('sendMessage error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Could not connect to AI. Please try again.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+      setMessages(prev => [...prev, {
+        role: 'assistant', content: '⚠️ Could not connect to AI. Please check your connection and try again.',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
     }
     setIsLoading(false);
   };
@@ -294,7 +323,7 @@ function ChatPage(props) {
             <motion.div style={{ background: 'rgba(15,12,41,0.98)', backdropFilter: 'blur(30px)', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 340, border: '1px solid rgba(255,255,255,0.15)', textAlign: 'center' }} initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
               <div style={{ fontSize: 40, marginBottom: 14 }}>👋</div>
               <h3 style={{ color: 'white', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Sign out?</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Your conversations are saved. You can sign back in anytime.</p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Your conversations are saved. Sign back in anytime.</p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <motion.button onClick={() => setShowLogoutModal(false)} style={{ flex: 1, padding: '11px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)' }}>Cancel</motion.button>
                 <motion.button onClick={handleLogout} style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg, #f5576c, #f093fb)', border: 'none', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer' }} whileHover={{ scale: 1.02 }}>Sign Out</motion.button>
@@ -338,7 +367,7 @@ function ChatPage(props) {
             </motion.div>
 
             <div style={{ padding: '15px' }}>
-              <motion.button onClick={() => { currentSessionId.current = `session_${Date.now()}`; currentSessionDocId.current = null; setSessionMessages([]); setSearchResults(null); setMessages([{ role: 'assistant', content: '👋 Starting fresh! What are you looking for today?\n\n🏨 Hotel · 🍽️ Restaurant · 🎭 Attraction · 🚖 Taxi', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]); if (isMobile) setSidebarOpen(false); }} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14, boxShadow: '0 4px 15px rgba(102,126,234,0.3)' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>✨ New Conversation</motion.button>
+              <motion.button onClick={() => { currentSessionId.current = `session_${Date.now()}`; currentSessionDocId.current = null; setSessionMessages([]); setSearchResults(null); setMessages([{ role: 'assistant', content: '👋 Starting fresh!\n\nWhat are you looking for?\n🏨 Hotel · 🍽️ Restaurant · 🎭 Attraction · 🚖 Taxi', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]); if (isMobile) setSidebarOpen(false); }} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, fontWeight: 600, cursor: 'pointer', fontSize: 14, boxShadow: '0 4px 15px rgba(102,126,234,0.3)' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>✨ New Conversation</motion.button>
             </div>
 
             <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto' }}>
@@ -352,7 +381,7 @@ function ChatPage(props) {
                       <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{conv.preview}</p>
                     </div>
                   </motion.div>
-                  <motion.button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(conv.id); }} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(245,87,108,0.15)', border: '1px solid rgba(245,87,108,0.3)', borderRadius: 6, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f5576c', opacity: hoveredConvId === conv.id ? 1 : 0, transition: 'opacity 0.15s' }} whileHover={{ background: 'rgba(245,87,108,0.35)', scale: 1.1 }} whileTap={{ scale: 0.9 }} title="Delete"><FiTrash2 size={11} /></motion.button>
+                  <motion.button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(conv.id); }} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: 'rgba(245,87,108,0.15)', border: '1px solid rgba(245,87,108,0.3)', borderRadius: 6, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#f5576c', opacity: hoveredConvId === conv.id ? 1 : 0, transition: 'opacity 0.15s' }} whileHover={{ background: 'rgba(245,87,108,0.35)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><FiTrash2 size={11} /></motion.button>
                 </div>
               )) : <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', padding: '10px 4px' }}>No conversations yet. Start chatting!</p>}
             </div>
@@ -381,7 +410,7 @@ function ChatPage(props) {
         <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <motion.button onClick={() => navigate('/')} title="Home" style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', flexShrink: 0 }} whileHover={{ color: 'white', background: 'rgba(255,255,255,0.12)', scale: 1.05 }} whileTap={{ scale: 0.95 }}><FiHome size={16} /></motion.button>
           <motion.button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 20, padding: 4, flexShrink: 0 }} whileHover={{ color: 'white', scale: 1.1 }}>☰</motion.button>
-          <div style={{ width: 36, height: 36, borderRadius: 12, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 4px 15px rgba(102,126,234,0.4)', flexShrink: 0 }}>🎯</div>
+          <div style={{ width: 36, height: 36, borderRadius: 12, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🎯</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontWeight: 700, color: 'white', fontSize: 14 }}>AMDDST Assistant</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -413,12 +442,11 @@ function ChatPage(props) {
                   <motion.button onClick={() => navigate('/login')} style={{ padding: '8px 18px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Sign In ✨</motion.button>
                 </motion.div>
               )}
-
               <AnimatePresence>
                 {messages.map((msg, index) => (
                   <React.Fragment key={index}>
                     <motion.div style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 10 }} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3 }}>
-                      {msg.role === 'assistant' && <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, alignSelf: 'flex-start', marginTop: 4, boxShadow: '0 4px 12px rgba(102,126,234,0.4)' }}>🎯</div>}
+                      {msg.role === 'assistant' && <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, alignSelf: 'flex-start', marginTop: 4 }}>🎯</div>}
                       <div style={{ maxWidth: isMobile ? '85%' : '72%' }}>
                         <div style={{ padding: '13px 17px', borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px', background: msg.role === 'user' ? 'linear-gradient(135deg, #667eea, #764ba2)' : 'rgba(255,255,255,0.08)', color: 'white', fontSize: 14, lineHeight: 1.6, backdropFilter: msg.role === 'assistant' ? 'blur(10px)' : 'none', border: msg.role === 'assistant' ? '1px solid rgba(255,255,255,0.1)' : 'none', boxShadow: msg.role === 'user' ? '0 4px 20px rgba(102,126,234,0.4)' : '0 4px 15px rgba(0,0,0,0.2)' }}>
                           <span dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
@@ -426,7 +454,7 @@ function ChatPage(props) {
                         {Array.isArray(msg.actions) && msg.actions.length > 0 && (
                           <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                             {msg.actions.map((action, ai) => (
-                              <motion.button key={ai} onClick={() => { if (typeof action.onClick === 'function') { action.onClick(); } else if (action.query) { sendMessage(action.query); } }} style={{ padding: '7px 14px', background: ai === 0 ? 'rgba(67,233,123,0.15)' : 'rgba(102,126,234,0.15)', border: `1px solid ${ai === 0 ? 'rgba(67,233,123,0.4)' : 'rgba(102,126,234,0.4)'}`, borderRadius: 20, fontSize: 12, color: ai === 0 ? '#43e97b' : '#a78bfa', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>{action.label}</motion.button>
+                              <motion.button key={ai} onClick={() => { if (typeof action.onClick === 'function') action.onClick(); else if (action.query) sendMessage(action.query); }} style={{ padding: '7px 14px', background: ai === 0 ? 'rgba(67,233,123,0.15)' : 'rgba(102,126,234,0.15)', border: `1px solid ${ai === 0 ? 'rgba(67,233,123,0.4)' : 'rgba(102,126,234,0.4)'}`, borderRadius: 20, fontSize: 12, color: ai === 0 ? '#43e97b' : '#a78bfa', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>{action.label}</motion.button>
                             ))}
                           </div>
                         )}
@@ -442,7 +470,6 @@ function ChatPage(props) {
                   </React.Fragment>
                 ))}
               </AnimatePresence>
-
               {isLoading && (
                 <motion.div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                   <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🎯</div>
@@ -460,7 +487,7 @@ function ChatPage(props) {
         <div style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 4 }}>
             {[
-              { text: '🏨 Cheap hotel', query: 'I need a cheap hotel in the centre' },
+              { text: '🏨 Hotel', query: 'I need a hotel' },
               { text: '🍽️ Indian food', query: 'Find me an Indian restaurant' },
               { text: '🎭 Museum', query: 'Looking for a museum to visit' },
               { text: '🚖 Taxi', query: 'I need a taxi' },
@@ -472,21 +499,7 @@ function ChatPage(props) {
             <input type="file" accept="audio/*" ref={fileInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files[0]) sendMessage(`[Audio: ${e.target.files[0].name}]`); }} />
             <div style={{ display: 'flex', gap: 2 }}>
               <motion.button onClick={() => fileInputRef.current.click()} style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><FiPaperclip size={18} /></motion.button>
-              <motion.button
-                onClick={() => {
-                  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { alert('Use Chrome for voice input.'); return; }
-                  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                  const recognition = new SR();
-                  recognition.lang = 'en-US'; recognition.interimResults = false;
-                  setIsRecording(true); recognition.start();
-                  recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); };
-                  recognition.onerror = () => setIsRecording(false);
-                  recognition.onend = () => setIsRecording(false);
-                }}
-                style={{ width: 36, height: 36, borderRadius: 10, background: isRecording ? 'rgba(245,87,108,0.15)' : 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isRecording ? '#f5576c' : 'rgba(255,255,255,0.4)' }}
-                animate={isRecording ? { scale: [1, 1.15, 1] } : {}} transition={{ duration: 0.8, repeat: Infinity }}
-                whileHover={{ color: '#f5576c', background: 'rgba(245,87,108,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              >{isRecording ? <FiMicOff size={18} /> : <FiMic size={18} />}</motion.button>
+              <motion.button onClick={() => { if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) { alert('Use Chrome for voice input.'); return; } const SR = window.SpeechRecognition || window.webkitSpeechRecognition; const recognition = new SR(); recognition.lang = 'en-US'; recognition.interimResults = false; setIsRecording(true); recognition.start(); recognition.onresult = (e) => { setIsRecording(false); sendMessage(e.results[0][0].transcript); }; recognition.onerror = () => setIsRecording(false); recognition.onend = () => setIsRecording(false); }} style={{ width: 36, height: 36, borderRadius: 10, background: isRecording ? 'rgba(245,87,108,0.15)' : 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isRecording ? '#f5576c' : 'rgba(255,255,255,0.4)' }} animate={isRecording ? { scale: [1, 1.15, 1] } : {}} transition={{ duration: 0.8, repeat: Infinity }} whileHover={{ color: '#f5576c', background: 'rgba(245,87,108,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}>{isRecording ? <FiMicOff size={18} /> : <FiMic size={18} />}</motion.button>
             </div>
             <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
             <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage(input)} placeholder="Ask about hotels, restaurants, attractions, taxis..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'white', fontSize: 14, padding: '4px 8px', minWidth: 0 }} />
@@ -497,7 +510,7 @@ function ChatPage(props) {
                   <motion.button onClick={() => sendMessage('I need a hotel')} title="Hotels" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#43e97b', background: 'rgba(67,233,123,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdHotel size={20} /></motion.button>
                   <motion.button onClick={() => sendMessage('Find me a restaurant')} title="Restaurants" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#f093fb', background: 'rgba(240,147,251,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdRestaurant size={20} /></motion.button>
                   <motion.button onClick={() => sendMessage('What attractions are nearby')} title="Attractions" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdAttractions size={20} /></motion.button>
-                  <motion.button onClick={() => sendMessage('I need a taxi')} title="Taxis" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#4facfe', background: 'rgba(79,172,254,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdLocalTaxi size={20} /></motion.button>
+                  <motion.button onClick={() => sendMessage('I need a taxi')} title="Taxis" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#fee140', background: 'rgba(254,225,64,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><MdLocalTaxi size={20} /></motion.button>
                   <motion.button onClick={() => navigate('/bookings')} title="History" style={{ width: 36, height: 36, borderRadius: 10, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' }} whileHover={{ color: '#38f9d7', background: 'rgba(56,249,215,0.1)', scale: 1.1 }} whileTap={{ scale: 0.9 }}><FiBookmark size={18} /></motion.button>
                   <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
                 </>

@@ -8,6 +8,7 @@ function SearchResults({ results, type, onSelect }) {
     if (type === 'hotel') return '🏨';
     if (type === 'restaurant') return '🍽️';
     if (type === 'attraction') return '🎭';
+    if (type === 'taxi') return '🚖';
     return '📍';
   };
 
@@ -15,7 +16,16 @@ function SearchResults({ results, type, onSelect }) {
     if (type === 'hotel') return 'linear-gradient(135deg, #4facfe, #00f2fe)';
     if (type === 'restaurant') return 'linear-gradient(135deg, #f093fb, #f5576c)';
     if (type === 'attraction') return 'linear-gradient(135deg, #43e97b, #38f9d7)';
+    if (type === 'taxi') return 'linear-gradient(135deg, #fee140, #f5576c)';
     return 'linear-gradient(135deg, #667eea, #764ba2)';
+  };
+
+  const getLabel = () => {
+    if (type === 'hotel') return 'hotels';
+    if (type === 'restaurant') return 'restaurants';
+    if (type === 'attraction') return 'attractions';
+    if (type === 'taxi') return 'taxis';
+    return 'results';
   };
 
   const getPriceColor = (price) => {
@@ -24,12 +34,6 @@ function SearchResults({ results, type, onSelect }) {
     if (price === 'expensive') return '#f5576c';
     return '#a78bfa';
   };
-
-  const handleSelect = (item) => {
-  if (onSelect) {
-    onSelect(item, type);
-  }
-};
 
   return (
     <motion.div
@@ -44,13 +48,14 @@ function SearchResults({ results, type, onSelect }) {
         letterSpacing: 1, textTransform: 'uppercase',
         marginBottom: 10,
       }}>
-        {getIcon()} Found {results.length} {type}s matching your request
+        {getIcon()} Found {results.length} {getLabel()} matching your request
       </p>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {results.map((item, i) => (
           <motion.div
             key={i}
-            onClick={() => handleSelect(item)}
+            onClick={() => onSelect && onSelect(item, type)}
             style={{
               background: 'rgba(255,255,255,0.06)',
               borderRadius: 12, padding: '14px 16px',
@@ -60,28 +65,26 @@ function SearchResults({ results, type, onSelect }) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.1 }}
-            whileHover={{
-              background: 'rgba(255,255,255,0.12)',
-              scale: 1.01,
-              border: '1px solid rgba(102,126,234,0.4)',
-            }}
+            whileHover={{ background: 'rgba(255,255,255,0.12)', scale: 1.01, border: '1px solid rgba(102,126,234,0.4)' }}
             whileTap={{ scale: 0.99 }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+
+              {/* Icon */}
               <div style={{
                 width: 40, height: 40, borderRadius: 10, flexShrink: 0,
                 background: getGradient(),
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 18,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
               }}>
                 {getIcon()}
               </div>
+
               <div style={{ flex: 1, minWidth: 0 }}>
+
+                {/* Name + price + stars row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
-                      {item.name}
-                    </p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{item.name}</p>
                     {item.pricerange && (
                       <span style={{
                         fontSize: 10, fontWeight: 700,
@@ -99,6 +102,7 @@ function SearchResults({ results, type, onSelect }) {
                       </span>
                     )}
                   </div>
+
                   {/* Select button */}
                   <motion.div
                     style={{
@@ -114,41 +118,41 @@ function SearchResults({ results, type, onSelect }) {
                     Select →
                   </motion.div>
                 </div>
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
-                  📍 {item.address}
-                </p>
+
+                {/* Address */}
+                {item.address && (
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
+                    📍 {item.address}
+                  </p>
+                )}
+
+                {/* Tags row */}
                 <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
                   {item.area && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                      🗺️ {item.area}
-                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🗺️ {item.area}</span>
                   )}
                   {item.food && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                      🍴 {item.food}
-                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🍴 {item.food}</span>
                   )}
                   {item.type && type === 'attraction' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                      🎪 {item.type}
-                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🎪 {item.type}</span>
                   )}
                   {item.parking === 'yes' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                      🅿️ Parking
-                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🅿️ Parking</span>
                   )}
                   {item.internet === 'yes' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                      📶 WiFi
-                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>📶 WiFi</span>
                   )}
                   {item.fee && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>
-                      💰 {item.fee}
-                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>💰 {item.fee}</span>
+                  )}
+                  {/* Taxi specific tags */}
+                  {type === 'taxi' && (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🚖 Available 24/7</span>
                   )}
                 </div>
+
+                {/* Phone */}
                 {item.phone && (
                   <p style={{ fontSize: 11, color: '#4facfe', marginTop: 5 }}>
                     📞 {item.phone}
