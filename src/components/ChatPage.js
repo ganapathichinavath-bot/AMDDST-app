@@ -6,7 +6,7 @@ import { collection, addDoc, query, orderBy, limit, getDocs, where, deleteDoc, d
 import { auth, db } from '../firebase';
 import { FiMic, FiMicOff, FiPaperclip, FiSend, FiBookmark, FiUser, FiHome, FiLogOut, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import { MdHotel, MdRestaurant, MdAttractions, MdLocalTaxi } from 'react-icons/md';
-import { searchHotels, searchRestaurants, searchAttractions, searchTaxis, parseSlots, isGreeting, isAppInfoQuery, detectDomain } from '../data/database';
+import { searchHotels, searchRestaurants, searchAttractions, searchTaxis, parseSlots, isGreeting, isAppInfoQuery } from '../data/database';
 import SearchResults from './SearchResults';
 import { ChatSkeleton, ConversationSkeleton } from './SkeletonLoader';
 
