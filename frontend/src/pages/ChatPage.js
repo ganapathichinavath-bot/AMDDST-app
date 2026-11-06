@@ -17,6 +17,10 @@ import {
 import { auth, db } from '../firebase';
 import BrandLogo from '../components/BrandLogo';
 import {
+  hotelDB,
+  restaurantDB,
+  attractionDB,
+  taxiDB,
   searchHotels,
   searchRestaurants,
   searchAttractions,
@@ -48,15 +52,125 @@ import {
 
 function isGreeting(text) {
   const t = text.toLowerCase().trim();
-  const greetingExact = /^(hi|hello|hey|hiya|howdy|greetings|good morning|good afternoon|good evening|sup|what'?s up|yo|how are you|how'?s it going|how are you doing|hey there|hello there)[\s!.,?]*$/i;
-  const greetingPrefix = /^(hi|hello|hey|hiya|howdy|good morning|good afternoon|good evening)[\s!.,?]+/i;
+  const greetingExact = /^(hi|hello|hey|hiya|howdy|greetings|good\s+morning|good\s+afternoon|good\s+evening|sup|what'?s\s+up|yo|how\s+are\s+you|how'?s\s+it\s+going|how\s+are\s+you\s+doing|hey\s+there|hello\s+there)[\s!.,?]*$/i;
+  const greetingPrefix = /^(hi|hello|hey|hiya|howdy|good\s+morning|good\s+afternoon|good\s+evening)[\s!.,?]+/i;
   return greetingExact.test(t) || (greetingPrefix.test(t) && !detectDomainFromText(t));
 }
 
 function isAppInfoQuery(text) {
   const t = text.toLowerCase().trim();
-  const infoPattern = /(what can you do|what do you do|help|how does this work|what is this app|what are you|who are you|features|capabilities|what can i ask|how can you help|explain yourself)/i;
-  return infoPattern.test(t);
+  const infoPattern = /(what can you do|what do you do|help|how does this work|what is this app|what are you|who are you|features|capabilities|what can i ask|how can you help|explain yourself|about amddst)/i;
+  return infoPattern.test(t) && !detectDomainFromText(t);
+}
+
+function matchesEntityName(textLower, nameLower) {
+  if (textLower.includes(nameLower)) return true;
+  const simplified = nameLower
+    .replace(/\b(hotel|guesthouse|bed and breakfast|lodge|restaurant|cafe|bistro|bar|kitchen|museum|theatre|theater|cinema|gallery|hall|church|taxis|taxi)\b/g, '')
+    .trim();
+  if (simplified.length >= 4) {
+    const words = simplified.split(/\s+/).filter(w => w.length >= 3);
+    if (words.length > 0 && words.every(w => textLower.includes(w))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function findEntityInDatabase(text) {
+  const t = text.toLowerCase();
+  for (const h of hotelDB) {
+    if (matchesEntityName(t, h.name.toLowerCase())) return { item: h, domain: 'hotel' };
+  }
+  for (const r of restaurantDB) {
+    if (matchesEntityName(t, r.name.toLowerCase())) return { item: r, domain: 'restaurant' };
+  }
+  for (const a of attractionDB) {
+    if (matchesEntityName(t, a.name.toLowerCase())) return { item: a, domain: 'attraction' };
+  }
+  for (const x of taxiDB) {
+    if (matchesEntityName(t, x.name.toLowerCase())) return { item: x, domain: 'taxi' };
+  }
+  return null;
+}
+
+function answerEntityQuestion(item, domain, text) {
+  const t = text.toLowerCase();
+
+  // 1. Phone Number / Contact
+  if (/\b(phone|number|telephone|contact|call|dial)\b/i.test(t)) {
+    if (item.phone && item.phone !== 'N/A') {
+      return `The contact phone number for **${item.name}** is **${item.phone}**.\n\n• **Address:** ${item.address}\n• **Area:** ${item.area ? item.area.toUpperCase() : 'Cambridge'}`;
+    }
+    return `**${item.name}** does not have a direct telephone line listed. Reservations are available online or at ${item.address}.`;
+  }
+
+  // 2. Address / Location / Directions
+  if (/\b(where|address|location|located|direction|directions|street|postcode|find)\b/i.test(t)) {
+    return `**${item.name}** is located at **${item.address}** in the **${item.area || 'Cambridge'}** sector.\n\n${item.phone ? `• **Phone:** ${item.phone}` : ''}`;
+  }
+
+  // 3. Parking
+  if (/\b(parking|park|car park|garage)\b/i.test(t)) {
+    if (item.parking === 'yes') {
+      return `Yes! **${item.name}** provides **on-site parking** for guests.\n\n• **Address:** ${item.address}\n• **Phone:** ${item.phone || 'N/A'}`;
+    } else if (item.parking === 'no') {
+      return `No, **${item.name}** does **not** have dedicated on-site parking. Nearby Cambridge street or public parking is recommended.\n\n• **Address:** ${item.address}`;
+    }
+    return `Parking availability is not explicitly specified for **${item.name}**. Location: ${item.address}.`;
+  }
+
+  // 4. WiFi / Internet
+  if (/\b(internet|wifi|wi-fi|broadband|wireless)\b/i.test(t)) {
+    if (item.internet === 'yes') {
+      return `Yes! **${item.name}** offers **complimentary WiFi** for all guests.\n\n• **Address:** ${item.address}`;
+    } else if (item.internet === 'no') {
+      return `No, **${item.name}** does **not** offer complimentary WiFi.\n\n• **Address:** ${item.address}`;
+    }
+  }
+
+  // 5. Admission Fee / Ticket Price / Cost
+  if (/\b(fee|admission|cost|ticket|tickets|charge|price|how much)\b/i.test(t)) {
+    if (domain === 'attraction' && item.fee) {
+      if (item.fee === 'free') {
+        return `Admission to **${item.name}** is **completely free of charge**!\n\n• **Location:** ${item.address} (${item.area || 'Cambridge'})\n• **Phone:** ${item.phone || 'N/A'}`;
+      }
+      return `Admission for **${item.name}** is **${item.fee}** (varies by exhibit/season).\n\n• **Location:** ${item.address}\n• **Phone:** ${item.phone || 'N/A'}`;
+    }
+    if (item.pricerange) {
+      return `**${item.name}** falls in the **${item.pricerange}** price tier.\n\n• **Address:** ${item.address}\n• **Phone:** ${item.phone || 'N/A'}`;
+    }
+  }
+
+  // 6. Rating / Stars
+  if (/\b(star|stars|rating|rated|grade)\b/i.test(t)) {
+    if (item.stars) {
+      return `**${item.name}** holds an official **${item.stars}-star** rating.\n\n• **Classification:** ${item.type || 'Accommodation'}\n• **Address:** ${item.address}\n• **Phone:** ${item.phone || 'N/A'}`;
+    }
+  }
+
+  // 7. Cuisine / Food
+  if (/\b(food|cuisine|serve|dish|dishes|menu|eat)\b/i.test(t)) {
+    if (item.food) {
+      return `**${item.name}** serves **${item.food}** cuisine in the **${item.pricerange || 'moderate'}** price bracket.\n\n• **Address:** ${item.address}\n• **Phone:** ${item.phone || 'N/A'}`;
+    }
+  }
+
+  // 8. General Entity Overview
+  const lines = [
+    `Here is the verified record for **${item.name}**:`,
+    `• **Address:** ${item.address}`,
+    item.phone ? `• **Phone:** ${item.phone}` : null,
+    item.area ? `• **Area Sector:** ${item.area}` : null,
+    item.pricerange ? `• **Price Tier:** ${item.pricerange}` : null,
+    item.stars ? `• **Rating:** ${item.stars} Stars` : null,
+    item.food ? `• **Cuisine:** ${item.food}` : null,
+    item.fee ? `• **Admission Fee:** ${item.fee}` : null,
+    item.parking === 'yes' ? `• **Parking:** Available On-Site` : null,
+    item.internet === 'yes' ? `• **Internet:** Complimentary WiFi` : null,
+  ].filter(Boolean).join('\n');
+
+  return lines;
 }
 
 function detectDomainFromText(text) {
@@ -67,8 +181,8 @@ function detectDomainFromText(text) {
   const hotelPhrases = /(place to stay|places to stay|somewhere to stay|room to stay|book a room|reserve a room|need a room|need a bed|find a hotel|find a guesthouse|stay in cambridge)/i;
 
   // 2. Dining / Restaurant Domain (Word boundaries)
-  const restaurantKeywords = /\b(restaurant|restaurants|cafe|cafes|bistro|diner|dining|eatery|eateries|cuisine|lunch|dinner|breakfast|food)\b/i;
-  const restaurantPhrases = /(place to eat|places to eat|somewhere to eat|eat out|grab a bite|book a table|reserve a table|find food|find a restaurant|somewhere for dinner|somewhere for lunch)/i;
+  const restaurantKeywords = /\b(restaurant|restaurants|cafe|cafes|bistro|diner|dining|eatery|eateries)\b/i;
+  const restaurantPhrases = /(place to eat|places to eat|somewhere to eat|eat out|grab a bite|book a table|reserve a table|find food|find a restaurant|somewhere for dinner|somewhere for lunch|where to eat)/i;
   const cuisineKeywords = /\b(italian|chinese|indian|thai|mexican|british|mediterranean|portuguese)\b/i;
 
   // 3. Attractions Domain (Word boundaries)
@@ -87,65 +201,169 @@ function detectDomainFromText(text) {
   return null;
 }
 
+function isFollowUpQuery(text, activeDomain) {
+  if (!activeDomain) return false;
+  const t = text.toLowerCase();
+
+  const areaKeywords = /\b(centre|center|central|north|south|east|west)\b/i;
+  const priceKeywords = /\b(cheap|budget|moderate|mid|expensive|luxury|affordable)\b/i;
+  const amenityKeywords = /\b(parking|wifi|internet|free parking|free wifi)\b/i;
+  const ratingKeywords = /\b(2 star|3 star|4 star|stars)\b/i;
+  const foodKeywords = /\b(italian|chinese|indian|thai|mexican|british|mediterranean|portuguese|cafe)\b/i;
+  const attractionTypes = /\b(museum|gallery|theatre|theater|cinema|park)\b/i;
+  const followupPhrases = /(how about|what about|any with|only|also|near|instead|change to|switch to|closer|cheaper|better)/i;
+
+  return areaKeywords.test(t) ||
+         priceKeywords.test(t) ||
+         amenityKeywords.test(t) ||
+         ratingKeywords.test(t) ||
+         foodKeywords.test(t) ||
+         attractionTypes.test(t) ||
+         followupPhrases.test(t);
+}
+
 function extractSlotsByDomain(text, domain) {
   const t = text.toLowerCase();
   const slots = {};
+
   if (domain === 'taxi') {
-    const destMatch = t.match(/(?:to|destination|going to|drop off at|drop at|arrive at)\s+([a-z\s&'-]+?)(?=\s+(?:from|at|leave|by|please|$))/i);
+    const destMatch = t.match(/(?:to|destination|going to|drop off at|drop at|arrive at)\s+([a-z0-9\s&'-]+?)(?=\s+(?:from|at|leave|by|please|for|$))/i);
     if (destMatch && destMatch[1]) slots['taxi-destination'] = destMatch[1].trim();
-    const deptMatch = t.match(/(?:from|departing|leaving|pickup from|pick up at|pickup at)\s+([a-z\s&'-]+?)(?=\s+(?:to|at|leave|by|please|$))/i);
+    const deptMatch = t.match(/(?:from|departing|leaving|pickup from|pick up at|pickup at)\s+([a-z0-9\s&'-]+?)(?=\s+(?:to|at|leave|by|please|for|$))/i);
     if (deptMatch && deptMatch[1]) slots['taxi-departure'] = deptMatch[1].trim();
-    const leaveMatch = t.match(/(?:leave at|leaving at|depart at|leave by)\s+([0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?)/i);
+    const leaveMatch = t.match(/(?:leave at|leaving at|depart at|leave by|at|for)\s+([0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?)/i);
     if (leaveMatch && leaveMatch[1]) slots['taxi-leaveat'] = leaveMatch[1].trim();
     const arriveMatch = t.match(/(?:arrive by|arrive at|be there by)\s+([0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?)/i);
     if (arriveMatch && arriveMatch[1]) slots['taxi-arriveby'] = arriveMatch[1].trim();
     return slots;
   }
+
+  // Areas (shared across hotel, restaurant, attraction)
+  let detectedArea = null;
+  if (/\b(centre|center|central|downtown)\b/i.test(t)) detectedArea = 'centre';
+  else if (/\b(north|northern)\b/i.test(t)) detectedArea = 'north';
+  else if (/\b(south|southern)\b/i.test(t)) detectedArea = 'south';
+  else if (/\b(east|eastern)\b/i.test(t)) detectedArea = 'east';
+  else if (/\b(west|western)\b/i.test(t)) detectedArea = 'west';
+
+  // Price ranges (shared across hotel, restaurant)
+  let detectedPrice = null;
+  if (/\b(cheap|budget|inexpensive|affordable|low cost)\b/i.test(t)) detectedPrice = 'cheap';
+  else if (/\b(moderate|mid|medium|average|reasonable)\b/i.test(t)) detectedPrice = 'moderate';
+  else if (/\b(expensive|luxury|upscale|high end|pricey)\b/i.test(t)) detectedPrice = 'expensive';
+
   if (domain === 'hotel') {
-    if (t.includes('cheap') || t.includes('budget')) slots['hotel-pricerange'] = 'cheap';
-    if (t.includes('moderate') || t.includes('mid')) slots['hotel-pricerange'] = 'moderate';
-    if (t.includes('expensive') || t.includes('luxury')) slots['hotel-pricerange'] = 'expensive';
-    if (t.includes('centre') || t.includes('center') || t.includes('central')) slots['hotel-area'] = 'centre';
-    if (t.includes('north')) slots['hotel-area'] = 'north';
-    if (t.includes('south')) slots['hotel-area'] = 'south';
-    if (t.includes('east')) slots['hotel-area'] = 'east';
-    if (t.includes('west')) slots['hotel-area'] = 'west';
-    if (t.includes('parking')) slots['hotel-parking'] = 'yes';
-    if (t.includes('internet') || t.includes('wifi')) slots['hotel-internet'] = 'yes';
+    if (detectedArea) slots['hotel-area'] = detectedArea;
+    if (detectedPrice) slots['hotel-pricerange'] = detectedPrice;
+    if (/\b(parking|car park|garage)\b/i.test(t) && !/\b(no parking|without parking)\b/i.test(t)) slots['hotel-parking'] = 'yes';
+    if (/\b(internet|wifi|wi-fi)\b/i.test(t) && !/\b(no wifi|no internet)\b/i.test(t)) slots['hotel-internet'] = 'yes';
+    if (/\b(guesthouse|guesthouses|b&b|bed and breakfast)\b/i.test(t)) slots['hotel-type'] = 'guesthouse';
+    else if (/\b(hotel|hotels)\b/i.test(t)) slots['hotel-type'] = 'hotel';
+    if (/\b(2|two)\s*(?:star|stars)\b/i.test(t)) slots['hotel-stars'] = 2;
+    if (/\b(3|three)\s*(?:star|stars)\b/i.test(t)) slots['hotel-stars'] = 3;
+    if (/\b(4|four)\s*(?:star|stars)\b/i.test(t)) slots['hotel-stars'] = 4;
     return slots;
   }
+
   if (domain === 'restaurant') {
-    if (t.includes('cheap') || t.includes('budget')) slots['restaurant-pricerange'] = 'cheap';
-    if (t.includes('moderate') || t.includes('mid')) slots['restaurant-pricerange'] = 'moderate';
-    if (t.includes('expensive') || t.includes('luxury')) slots['restaurant-pricerange'] = 'expensive';
-    if (t.includes('centre') || t.includes('center') || t.includes('central')) slots['restaurant-area'] = 'centre';
-    if (t.includes('north')) slots['restaurant-area'] = 'north';
-    if (t.includes('south')) slots['restaurant-area'] = 'south';
-    if (t.includes('east')) slots['restaurant-area'] = 'east';
-    if (t.includes('west')) slots['restaurant-area'] = 'west';
-    if (t.includes('indian')) slots['restaurant-food'] = 'indian';
-    if (t.includes('chinese')) slots['restaurant-food'] = 'chinese';
-    if (t.includes('italian')) slots['restaurant-food'] = 'italian';
-    if (t.includes('thai')) slots['restaurant-food'] = 'thai';
-    if (t.includes('british')) slots['restaurant-food'] = 'british';
-    if (t.includes('mediterranean')) slots['restaurant-food'] = 'mediterranean';
-    if (t.includes('mexican')) slots['restaurant-food'] = 'mexican';
-    if (t.includes('portuguese')) slots['restaurant-food'] = 'portuguese';
+    if (detectedArea) slots['restaurant-area'] = detectedArea;
+    if (detectedPrice) slots['restaurant-pricerange'] = detectedPrice;
+    if (/\b(italian|pizza|pasta)\b/i.test(t)) slots['restaurant-food'] = 'italian';
+    else if (/\b(chinese|dim sum|noodles)\b/i.test(t)) slots['restaurant-food'] = 'chinese';
+    else if (/\b(indian|curry)\b/i.test(t)) slots['restaurant-food'] = 'indian';
+    else if (/\b(thai)\b/i.test(t)) slots['restaurant-food'] = 'thai';
+    else if (/\b(british|english|pub)\b/i.test(t)) slots['restaurant-food'] = 'british';
+    else if (/\b(mediterranean)\b/i.test(t)) slots['restaurant-food'] = 'mediterranean';
+    else if (/\b(mexican)\b/i.test(t)) slots['restaurant-food'] = 'mexican';
+    else if (/\b(portuguese)\b/i.test(t)) slots['restaurant-food'] = 'portuguese';
+    else if (/\b(cafe|coffee)\b/i.test(t)) slots['restaurant-food'] = 'cafe';
+    else if (/\b(european|modern european)\b/i.test(t)) slots['restaurant-food'] = 'european';
     return slots;
   }
+
   if (domain === 'attraction') {
-    if (t.includes('centre') || t.includes('center') || t.includes('central')) slots['attraction-area'] = 'centre';
-    if (t.includes('north')) slots['attraction-area'] = 'north';
-    if (t.includes('east')) slots['attraction-area'] = 'east';
-    if (t.includes('west')) slots['attraction-area'] = 'west';
-    if (t.includes('museum')) slots['attraction-type'] = 'museum';
-    if (t.includes('theatre') || t.includes('theater')) slots['attraction-type'] = 'theatre';
-    if (t.includes('cinema') || t.includes('movie')) slots['attraction-type'] = 'cinema';
-    if (t.includes('park')) slots['attraction-type'] = 'park';
-    if (t.includes('gallery')) slots['attraction-type'] = 'museum';
+    if (detectedArea) slots['attraction-area'] = detectedArea;
+    if (/\b(museum|museums|gallery|galleries)\b/i.test(t)) slots['attraction-type'] = 'museum';
+    else if (/\b(theatre|theatres|theater|theaters)\b/i.test(t)) slots['attraction-type'] = 'theatre';
+    else if (/\b(cinema|cinemas|movie|movies)\b/i.test(t)) slots['attraction-type'] = 'cinema';
+    else if (/\b(park|parks|garden|hall)\b/i.test(t)) slots['attraction-type'] = 'park';
+    else if (/\b(church|churches|cathedral|architecture)\b/i.test(t)) slots['attraction-type'] = 'architecture';
+    else if (/\b(college|colleges|university)\b/i.test(t)) slots['attraction-type'] = 'college';
+    else if (/\b(pool|swimming)\b/i.test(t)) slots['attraction-type'] = 'swimming pool';
     return slots;
   }
+
   return slots;
+}
+
+function generateAccurateResponse(domain, slots, results, text) {
+  // If no results matched
+  if (!results || results.length === 0) {
+    const filters = [];
+    if (slots[`${domain}-area`]) filters.push(`area: **${slots[`${domain}-area`]}**`);
+    if (slots[`${domain}-pricerange`]) filters.push(`budget: **${slots[`${domain}-pricerange`]}**`);
+    if (slots[`${domain}-food`]) filters.push(`cuisine: **${slots[`${domain}-food`]}**`);
+    if (slots[`${domain}-type`]) filters.push(`type: **${slots[`${domain}-type`]}**`);
+    if (slots[`${domain}-parking`] === 'yes') filters.push('on-site parking');
+    if (slots[`${domain}-internet`] === 'yes') filters.push('free WiFi');
+
+    const filterText = filters.length > 0 ? ` with ${filters.join(', ')}` : '';
+    return `No ${domain} records in our Cambridge database matched your exact combination${filterText}.\n\nTry broadening your search:\n• Expand to other sectors (Centre, North, South, East, West)\n• Broaden budget or remove amenity restrictions`;
+  }
+
+  // Hotels
+  if (domain === 'hotel') {
+    const filterDesc = [];
+    if (slots['hotel-pricerange']) filterDesc.push(`**${slots['hotel-pricerange']}**`);
+    if (slots['hotel-area']) filterDesc.push(`in the **${slots['hotel-area']}**`);
+    if (slots['hotel-parking'] === 'yes') filterDesc.push('with parking');
+    if (slots['hotel-internet'] === 'yes') filterDesc.push('with WiFi');
+    const desc = filterDesc.length > 0 ? ` (${filterDesc.join(', ')})` : '';
+
+    const summaryList = results.map(h => `• **${h.name}** (${h.pricerange}, ${h.stars ? `${h.stars}★ ` : ''}${h.area}) — ${h.address}`).join('\n');
+    return `I found **${results.length}** accommodation(s) in Cambridge${desc}:\n\n${summaryList}\n\nSelect a card below for full details or to confirm a reservation.`;
+  }
+
+  // Restaurants
+  if (domain === 'restaurant') {
+    const filterDesc = [];
+    if (slots['restaurant-food']) filterDesc.push(`**${slots['restaurant-food']}**`);
+    if (slots['restaurant-pricerange']) filterDesc.push(`**${slots['restaurant-pricerange']}**`);
+    if (slots['restaurant-area']) filterDesc.push(`in the **${slots['restaurant-area']}**`);
+    const desc = filterDesc.length > 0 ? ` (${filterDesc.join(', ')})` : '';
+
+    const summaryList = results.map(r => `• **${r.name}** (${r.food}, ${r.pricerange}) — ${r.address}`).join('\n');
+    return `I found **${results.length}** restaurant(s) in Cambridge${desc}:\n\n${summaryList}\n\nSelect a card below to view details or book a table.`;
+  }
+
+  // Attractions
+  if (domain === 'attraction') {
+    const filterDesc = [];
+    if (slots['attraction-type']) filterDesc.push(`**${slots['attraction-type']}**`);
+    if (slots['attraction-area']) filterDesc.push(`in the **${slots['attraction-area']}**`);
+    const desc = filterDesc.length > 0 ? ` (${filterDesc.join(', ')})` : '';
+
+    const summaryList = results.map(a => `• **${a.name}** (${a.type}, Fee: ${a.fee}) — ${a.address}`).join('\n');
+    return `Here are **${results.length}** attraction(s) in Cambridge${desc}:\n\n${summaryList}\n\nSelect a card below to explore opening info and directions.`;
+  }
+
+  // Taxis
+  if (domain === 'taxi') {
+    const dest = slots['taxi-destination'];
+    const dept = slots['taxi-departure'];
+    const leave = slots['taxi-leaveat'];
+    const arrive = slots['taxi-arriveby'];
+    const assigned = results[0] || taxiDB[0];
+
+    if (dest || dept) {
+      return `Your Cambridge taxi booking has been prepared:\n\n• **Pick-up:** ${dept || 'Cambridge Central'}\n• **Destination:** ${dest || 'Selected Destination'}\n${leave ? `• **Departure Time:** ${leave}\n` : ''}${arrive ? `• **Arrival Time:** ${arrive}\n` : ''}• **Assigned Operator:** **${assigned.name}** (${assigned.phone})\n• **Price Tier:** ${assigned.pricerange}\n\nYour driver request is confirmed!`;
+    }
+
+    const summaryList = results.map(t => `• **${t.name}** — Phone: ${t.phone} (${t.pricerange})`).join('\n');
+    return `Here are verified Cambridge taxi providers ready for dispatch:\n\n${summaryList}\n\nProvide your pick-up and destination to book directly.`;
+  }
+
+  return `Retrieved ${results.length} verified record(s) matching your parameters:`;
 }
 
 function ChatPage(props) {
@@ -172,6 +390,7 @@ function ChatPage(props) {
   const messagesEndRef = useRef(null);
   const currentSessionDocId = useRef(null);
   const currentSessionId = useRef(`session_${Date.now()}`);
+  const dialogueStateRef = useRef({ domain: null, slots: {}, lastEntity: null });
 
   const userName = props.user?.displayName || props.user?.email?.split('@')[0] || '';
   const userInitial = userName ? userName[0].toUpperCase() : 'U';
@@ -220,6 +439,7 @@ function ChatPage(props) {
     setMessages([{ role: 'assistant', content: `Resumed Session: **"${conv.title}"**\n\nDialogue history restored.`, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }, ...loadedMessages]);
     currentSessionDocId.current = conv.id;
     setSessionMessages(loadedMessages.map(m => ({ role: m.role, content: m.content })));
+    dialogueStateRef.current = { domain: null, slots: {}, lastEntity: null };
     setSearchResults(null);
     if (isMobile) setSidebarOpen(false);
   };
@@ -240,6 +460,8 @@ function ChatPage(props) {
   };
 
   const handleItemSelect = (item, type) => {
+    dialogueStateRef.current.lastEntity = item;
+    dialogueStateRef.current.domain = type;
     const lines = [
       `**${item.name}**`,
       `• **Address:** ${item.address}`,
@@ -278,7 +500,23 @@ function ChatPage(props) {
     setSearchResults(null);
     setSearchType('');
 
-    // 1. Greet the user when they greet
+    // 1. Reset / Clear Search Command
+    if (/^(reset|clear|clear search|start over|new search|start new)[\s!.]*$/i.test(text.trim())) {
+      dialogueStateRef.current = { domain: null, slots: {}, lastEntity: null };
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: 'Dialogue state has been reset. What would you like to search for next? (Accommodations, Dining, Attractions, or Transit in Cambridge)',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+        setSearchResults(null);
+        setSearchType('');
+        setIsLoading(false);
+      }, 200);
+      return;
+    }
+
+    // 2. Greet the user when they greet
     if (isGreeting(text)) {
       setTimeout(() => {
         const greetingReply = `Hello${userName ? `, ${userName}` : ''}! Welcome to **AMDDST**.\n\nI can assist you with:\n• **Accommodations** — Finding hotels and guesthouses in Cambridge\n• **Dining** — Recommending restaurants, cafes, and cuisines\n• **Attractions** — Discovering museums, theatres, and parks\n• **Transit** — Booking taxi rides across Cambridge\n\nHow can I help you today?`;
@@ -290,11 +528,11 @@ function ChatPage(props) {
         setSearchResults(null);
         setSearchType('');
         setIsLoading(false);
-      }, 250);
+      }, 200);
       return;
     }
 
-    // 2. Explain app capabilities when asked
+    // 3. Explain app capabilities when asked
     if (isAppInfoQuery(text)) {
       setTimeout(() => {
         const infoReply = `I am **AMDDST** (Adaptive Multi-Domain Dialogue State Tracker), dedicated to Cambridge services.\n\nI can assist you with:\n• **Accommodations**: *"Find a cheap hotel in the centre with wifi"*\n• **Dining**: *"Recommend a moderate Italian restaurant"*\n• **Attractions**: *"What museums or theatres are in Cambridge?"*\n• **Transit**: *"Book a taxi to the railway station"*\n\nAsk me about any of these services to get verified recommendations!`;
@@ -306,13 +544,54 @@ function ChatPage(props) {
         setSearchResults(null);
         setSearchType('');
         setIsLoading(false);
+      }, 200);
+      return;
+    }
+
+    // 4. Specific Entity Lookup / Information Question
+    const entityMatch = findEntityInDatabase(text);
+    if (entityMatch) {
+      dialogueStateRef.current.domain = entityMatch.domain;
+      dialogueStateRef.current.lastEntity = entityMatch.item;
+      const answer = answerEntityQuestion(entityMatch.item, entityMatch.domain, text);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: answer,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+        setSearchResults([entityMatch.item]);
+        setSearchType(entityMatch.domain);
+        setIsLoading(false);
       }, 250);
       return;
     }
 
-    // 3. Strict Domain Check - Cards and searches ONLY for supported domains
-    const userDomain = detectDomainFromText(text);
-    if (!userDomain) {
+    // 4b. Pronoun / Field Question referring to last mentioned entity
+    if (dialogueStateRef.current.lastEntity && /\b(it|its|they|phone|number|address|where|parking|wifi|fee|price|stars)\b/i.test(text) && !detectDomainFromText(text)) {
+      const answer = answerEntityQuestion(dialogueStateRef.current.lastEntity, dialogueStateRef.current.domain, text);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: answer,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+        setSearchResults([dialogueStateRef.current.lastEntity]);
+        setSearchType(dialogueStateRef.current.domain);
+        setIsLoading(false);
+      }, 250);
+      return;
+    }
+
+    // 5. Domain Resolution (New domain or Multi-Turn follow-up)
+    let explicitDomain = detectDomainFromText(text);
+
+    if (!explicitDomain && dialogueStateRef.current.domain && isFollowUpQuery(text, dialogueStateRef.current.domain)) {
+      explicitDomain = dialogueStateRef.current.domain;
+    }
+
+    if (!explicitDomain) {
+      // Out-of-scope query
       setTimeout(() => {
         const outOfScopeReply = `I specialize exclusively in **Cambridge travel and local services** across four domains:\n• **Accommodations** (Hotels, guesthouses, B&Bs)\n• **Dining** (Restaurants, cafes, cuisines)\n• **Attractions** (Museums, theatres, parks)\n• **Transit** (Taxi and cab dispatch)\n\nI am unable to answer general questions outside of these services. Please ask about places to stay, dine, visit, or travel in Cambridge!`;
         setMessages(prev => [...prev, {
@@ -323,83 +602,89 @@ function ChatPage(props) {
         setSearchResults(null);
         setSearchType('');
         setIsLoading(false);
-      }, 250);
+      }, 200);
       return;
     }
 
-    // 4. In-Domain Execution ONLY: query model and search database ONLY for userDomain
-    const userSlots = extractSlotsByDomain(text, userDomain);
+    // Switch or update active domain
+    if (dialogueStateRef.current.domain !== explicitDomain) {
+      const previousArea = dialogueStateRef.current.slots[`${dialogueStateRef.current.domain}-area`];
+      dialogueStateRef.current.domain = explicitDomain;
+      dialogueStateRef.current.slots = previousArea ? { [`${explicitDomain}-area`]: previousArea } : {};
+      dialogueStateRef.current.lastEntity = null;
+    }
+
+    // Extract new slots for this domain
+    const newSlots = extractSlotsByDomain(text, explicitDomain);
+    dialogueStateRef.current.slots = { ...dialogueStateRef.current.slots, ...newSlots };
+    const currentSlots = dialogueStateRef.current.slots;
 
     try {
-      let aiSlots = {};
-      let botReply = '';
+      // AI dialogue state prediction with history
       try {
-        const prediction = await predictDialogueState(text, []);
-        botReply = prediction.botReply || '';
-        aiSlots = prediction.aiSlots || {};
-      } catch (e) {
-        console.warn('Dialogue state prediction fallback to local extraction:', e);
+        const historyPayload = sessionMessages.slice(-6).map(m => [
+          m.role === 'user' ? m.content : '',
+          m.role === 'assistant' ? m.content : ''
+        ]);
+        const prediction = await predictDialogueState(text, historyPayload);
+        if (prediction.aiSlots && typeof prediction.aiSlots === 'object') {
+          const prefix = `${explicitDomain}-`;
+          Object.keys(prediction.aiSlots).forEach(k => {
+            if (k.startsWith(prefix) && prediction.aiSlots[k]) {
+              dialogueStateRef.current.slots[k] = prediction.aiSlots[k];
+            }
+          });
+        }
+      } catch (aiErr) {
+        // Fallback to local regex extractions
       }
 
-      // Filter aiSlots to ONLY slots belonging to this userDomain
-      const domainPrefix = `${userDomain}-`;
-      const domainAiSlots = {};
-      if (aiSlots && typeof aiSlots === 'object') {
-        Object.keys(aiSlots).forEach(key => {
-          if (key.startsWith(domainPrefix)) {
-            domainAiSlots[key] = aiSlots[key];
-          }
-        });
-      }
-
-      const mergedSlots = { ...userSlots, ...domainAiSlots };
-
+      // Query database with merged accumulated slots
       let results = [];
-      if (userDomain === 'hotel') results = searchHotels(mergedSlots);
-      else if (userDomain === 'restaurant') results = searchRestaurants(mergedSlots);
-      else if (userDomain === 'attraction') results = searchAttractions(mergedSlots);
-      else if (userDomain === 'taxi') results = searchTaxis(mergedSlots);
+      if (explicitDomain === 'hotel') results = searchHotels(currentSlots);
+      else if (explicitDomain === 'restaurant') results = searchRestaurants(currentSlots);
+      else if (explicitDomain === 'attraction') results = searchAttractions(currentSlots);
+      else if (explicitDomain === 'taxi') results = searchTaxis(currentSlots);
 
-      let displayReply = '';
+      // Generate natural, accurate conversational answer
+      const accurateAnswer = generateAccurateResponse(explicitDomain, currentSlots, results, text);
+
       if (results && results.length > 0) {
-        displayReply = botReply || `Retrieved ${results.length} verified ${userDomain}(s) matching your parameters:`;
         setSearchResults(results);
-        setSearchType(userDomain);
+        setSearchType(explicitDomain);
+        dialogueStateRef.current.lastEntity = results[0];
       } else {
-        displayReply = `No matching ${userDomain} records found for your specific filters.\n\nRecommended adjustments:\n• Specify a broader area sector (Centre, North, South, East, West)\n• Broaden your budget constraints\n• Remove specific amenity filters`;
         setSearchResults(null);
         setSearchType('');
       }
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: displayReply,
+        content: accurateAnswer,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
-      await upsertConversation(text, displayReply);
+      await upsertConversation(text, accurateAnswer);
+
     } catch (error) {
       console.error('sendMessage error:', error);
       let fallbackResults = [];
-      if (userDomain === 'hotel') fallbackResults = searchHotels(userSlots);
-      else if (userDomain === 'restaurant') fallbackResults = searchRestaurants(userSlots);
-      else if (userDomain === 'attraction') fallbackResults = searchAttractions(userSlots);
-      else if (userDomain === 'taxi') fallbackResults = searchTaxis(userSlots);
+      if (explicitDomain === 'hotel') fallbackResults = searchHotels(currentSlots);
+      else if (explicitDomain === 'restaurant') fallbackResults = searchRestaurants(currentSlots);
+      else if (explicitDomain === 'attraction') fallbackResults = searchAttractions(currentSlots);
+      else if (explicitDomain === 'taxi') fallbackResults = searchTaxis(currentSlots);
 
+      const accurateAnswer = generateAccurateResponse(explicitDomain, currentSlots, fallbackResults, text);
       if (fallbackResults && fallbackResults.length > 0) {
         setSearchResults(fallbackResults);
-        setSearchType(userDomain);
+        setSearchType(explicitDomain);
       } else {
         setSearchResults(null);
         setSearchType('');
       }
 
-      const fallbackReply = fallbackResults.length > 0
-        ? `Retrieved ${fallbackResults.length} verified ${userDomain}(s) matching your parameters:`
-        : `No matching ${userDomain} records found for your parameters.`;
-
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: fallbackReply,
+        content: accurateAnswer,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
     }
