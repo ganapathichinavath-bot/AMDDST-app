@@ -13,6 +13,7 @@
     "start:backend": "npm start --prefix backend",
     "dev": "concurrently --kill-others \"npm run dev --prefix backend\" \"npm start --prefix frontend\"",
     "build": "npm run build --prefix frontend",
+    "vercel-build": "npm install --prefix frontend && npm run build --prefix frontend",
     "install:all": "npm install --prefix frontend && npm install --prefix backend"
   },
   "devDependencies": {
