@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import BrandLogo from './BrandLogo';
+import BrandLogo from '../components/BrandLogo';
 import {
   LuUser,
   LuAtSign,

@@ -4,14 +4,14 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import SplashScreen from './components/SplashScreen';
-import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
-import ProfileSetup from './components/ProfileSetup';
-import ProfilePage from './components/ProfilePage';
-import BookingsPage from './components/BookingsPage';
-import BookingConfirmPage from './components/BookingConfirmPage';
-import ChatPage from './components/ChatPage';
-import NotFoundPage from './components/NotFoundPage';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import ProfileSetup from './pages/ProfileSetup';
+import ProfilePage from './pages/ProfilePage';
+import BookingsPage from './pages/BookingsPage';
+import BookingConfirmPage from './pages/BookingConfirmPage';
+import ChatPage from './pages/ChatPage';
+import NotFoundPage from './pages/NotFoundPage';
 import './index.css';
 
 function App() {

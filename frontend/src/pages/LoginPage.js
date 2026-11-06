@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
-import BrandLogo from './BrandLogo';
+import BrandLogo from '../components/BrandLogo';
 import {
   LuMail,
   LuLock,

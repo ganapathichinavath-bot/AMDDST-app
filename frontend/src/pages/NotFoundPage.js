@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import BrandLogo from './BrandLogo';
+import BrandLogo from '../components/BrandLogo';
 import { LuHouse, LuMessagesSquare } from 'react-icons/lu';
 
 function NotFoundPage() {

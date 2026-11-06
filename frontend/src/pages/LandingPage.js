@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
-import BrandLogo from './BrandLogo';
+import BrandLogo from '../components/BrandLogo';
 import {
   LuBed,
   LuUtensils,

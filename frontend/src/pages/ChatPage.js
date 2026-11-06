@@ -15,18 +15,18 @@ import {
   updateDoc
 } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import BrandLogo from './BrandLogo';
+import BrandLogo from '../components/BrandLogo';
 import {
   searchHotels,
   searchRestaurants,
   searchAttractions,
   searchTaxis,
-  parseSlots,
   isGreeting,
   isAppInfoQuery
 } from '../data/database';
-import SearchResults from './SearchResults';
-import { ChatSkeleton, ConversationSkeleton } from './SkeletonLoader';
+import SearchResults from '../components/SearchResults';
+import { ChatSkeleton, ConversationSkeleton } from '../components/SkeletonLoader';
+import { predictDialogueState } from '../services/api';
 import {
   LuSend,
   LuMic,
@@ -289,21 +289,8 @@ function ChatPage(props) {
     const userSlots = userDomain ? extractSlotsByDomain(text, userDomain) : {};
 
     try {
-      // Step 3: Call AI state tracking model
-      const response = await fetch('https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: [text, []] })
-      });
-      const result = await response.json();
-      const pollResponse = await fetch(`https://ganirathod-amddst-demo.hf.space/gradio_api/call/chat/${result.event_id}`);
-      const text2 = await pollResponse.text();
-      const lines2 = text2.split('\n').filter(l => l.startsWith('data:'));
-      const lastLine = lines2[lines2.length - 1];
-      const data = JSON.parse(lastLine.replace('data: ', ''));
-      const assistantMsgs = data[0].filter(m => m.role === 'assistant');
-      const botReply = assistantMsgs[assistantMsgs.length - 1]?.content?.[0]?.text || '';
-
-      // Step 4: Parse AI slots
-      const aiSlots = parseSlots(botReply.replace('Detected Dialogue State:\n', '').replace(/•\s/g, ''));
+      // Step 3: Call AI state tracking model (via backend with fallback)
+      const { botReply, aiSlots } = await predictDialogueState(text, []);
 
       // Step 5: Domain resolution
       let finalDomain = userDomain;

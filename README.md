@@ -1,148 +1,141 @@
-# 🎯 AMDDST — Adaptive Multi-Domain Dialogue State Tracker
+# AMDDST — Adaptive Multi-Domain Dialogue State Tracker
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://amddst-app.vercel.app)
 [![HuggingFace](https://img.shields.io/badge/Model-HuggingFace-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/ganirathod/amddst-dst-model)
 [![HuggingFace Space](https://img.shields.io/badge/Demo-HuggingFace%20Space-blue?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/ganirathod/amddst-demo)
 
-> Based on the IEEE research paper that achieved **3rd place globally** at the DSTC10 Challenge
+> Based on the IEEE research paper that achieved **3rd place globally** at the DSTC10 Challenge.
 
 ---
 
-## 🚀 Live Demo
+## What is AMDDST?
 
-👉 **[https://amddst-app.vercel.app](https://amddst-app.vercel.app)**
+AMDDST is an AI-powered dialogue state tracking system that tracks user intent across multi-turn conversations. It accurately infers natural language requests for hotels, restaurants, cultural attractions, and taxis — recovering from noisy speech recognition inputs via Levenshtein post-processing.
 
----
-
-## 📌 What is AMDDST?
-
-AMDDST is an AI-powered travel assistant that tracks user intent across multi-turn conversations. It understands natural language requests for hotels, restaurants, and attractions — even handling speech recognition errors using Levenshtein post-processing.
-
-**Example:**
-```
-User: I need a cheap hotel in the centre
-AI: Detected → hotel-pricerange = cheap | hotel-area = centre
-     → Shows real hotel results from database
+**Example Dialogue State Ingestion:**
+```text
+User: I need a cheap hotel in the centre with free parking
+State Inferred: [hotel-pricerange = cheap, hotel-area = centre, hotel-parking = yes]
+Resolution: Queries verified MultiWOZ accommodations knowledge base
 ```
 
 ---
 
-## 🧠 How It Works
-```
-User speaks/types
+## Architectural Pipeline
+```text
+User Speech / Natural Language Input
        ↓
-BART-base model (fine-tuned on MultiWOZ 2.1)
+Fine-Tuned BART-Base Sequence Model (MultiWOZ 2.1)
        ↓
-Dialogue State Tracking (slot-value pairs)
+Dialogue Belief State Extraction (Slot-Value Pairs)
        ↓
-Levenshtein Post-Processing (fixes ASR errors)
+Levenshtein Phoneme Distance Correction (ASR Robustness)
        ↓
-Database Search (real hotels/restaurants/attractions)
+Domain Knowledge Base Query (Hotels · Dining · Attractions · Transit)
        ↓
-Results shown to user
+Structured State & Verified Cards Presented to User
 ```
 
 ---
 
-## 🔧 Tech Stack
+## Full-Stack Monorepo Structure
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React.js, Framer Motion |
-| AI Model | BART-base (Facebook) |
-| Training | PyTorch, HuggingFace Transformers |
-| Dataset | MultiWOZ 2.1 (77,000+ examples) |
-| Database | Firebase Firestore |
-| Auth | Firebase Authentication |
-| Deployment | Vercel (frontend), HuggingFace Spaces (model) |
-| PWA | Service Worker, Web App Manifest |
-
----
-
-## 📊 Model Performance
-
-| Metric | Value |
-|--------|-------|
-| Training examples | 77,000+ |
-| Model parameters | 139M |
-| Final training loss | 0.12 |
-| Base model | facebook/bart-base |
-| Training epochs | 1 |
-| GPU | Kaggle T4 |
-
----
-
-## ✨ Features
-
-- 🎙️ **Voice Input** — Web Speech API integration
-- 📁 **Audio Upload** — Upload audio files for processing
-- 🏨 **Hotel Search** — Real-time search from MultiWOZ database
-- 🍽️ **Restaurant Search** — Filter by cuisine, price, area
-- 🎭 **Attraction Discovery** — Find local attractions
-- 👤 **User Authentication** — Google OAuth + Email/Password
-- 💾 **Conversation History** — Saved to Firestore
-- 📱 **PWA** — Installable on any device
-- 🌙 **Guest Mode** — Try without signing up
-
----
-
-## 🏗️ Project Structure
-```
-amddst-app/
-├── public/
-│   ├── manifest.json          # PWA config
-│   └── service-worker.js      # Offline support
-├── src/
-│   ├── components/
-│   │   ├── SplashScreen.js    # Animated intro
-│   │   ├── LandingPage.js     # Home page
-│   │   ├── LoginPage.js       # Firebase auth
-│   │   ├── ProfileSetup.js    # New user setup
-│   │   ├── ProfilePage.js     # Edit profile
-│   │   ├── ChatPage.js        # Main chat interface
-│   │   ├── BookingsPage.js    # Conversation history
-│   │   └── SearchResults.js   # Hotel/restaurant cards
-│   ├── data/
-│   │   └── database.js        # MultiWOZ database
-│   ├── firebase.js            # Firebase config
-│   └── App.js                 # Route management
+```text
+AMDDST-app/
+├── backend/                        # Node.js & Express API Gateway
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── dstController.js    # Inference job orchestration
+│   │   │   └── searchController.js # MultiWOZ domain search
+│   │   ├── routes/
+│   │   │   ├── dstRoutes.js        # POST /api/dst/predict
+│   │   │   ├── searchRoutes.js     # POST /api/search
+│   │   │   └── healthRoutes.js     # GET /api/health
+│   │   ├── services/
+│   │   │   ├── hfInferenceService.js # Hugging Face Gradio client
+│   │   │   └── multiwozService.js  # Knowledge base search engine
+│   │   ├── data/
+│   │   │   └── database.js         # MultiWOZ knowledge base
+│   │   └── server.js               # Express application entry
+│   ├── .env.example
+│   └── package.json
+│
+├── frontend/                       # React 19 Client SPA
+│   ├── public/
+│   │   ├── manifest.json           # PWA configuration
+│   │   └── index.html              # HTML shell & font references
+│   └── src/
+│       ├── components/             # Reusable design components
+│       │   ├── BrandLogo.js        # Vector neural brand emblem
+│       │   ├── SearchResults.js    # Result cards with Lucide icons
+│       │   ├── SkeletonLoader.js   # Slate shimmer placeholders
+│       │   └── SplashScreen.js     # Minimalist splash screen
+│       ├── pages/                  # Route views
+│       │   ├── LandingPage.js      # Executive product landing
+│       │   ├── LoginPage.js        # Google OAuth & Email auth
+│       │   ├── ChatPage.js         # Core dialogue console
+│       │   ├── ProfilePage.js      # Account & parameter settings
+│       │   ├── ProfileSetup.js     # New profile onboarding
+│       │   ├── BookingsPage.js     # Saved reservations log
+│       │   ├── BookingConfirmPage.js # Reservation confirmation
+│       │   └── NotFoundPage.js     # 404 error page
+│       ├── services/
+│       │   └── api.js              # Backend client with automatic HF fallback
+│       ├── data/
+│       │   └── database.js         # Client-side fallback dataset
+│       ├── firebase.js             # Firebase Auth & Firestore client
+│       ├── App.js                  # Router & auth state listener
+│       └── index.css               # Design tokens & slate palette
+│
+├── package.json                    # Monorepo orchestration scripts
+└── README.md
 ```
 
 ---
 
-## 🚀 Run Locally
+## Quickstart & Local Execution
+
+### 1. Install Dependencies
 ```bash
-# Clone the repo
-git clone https://github.com/ganapathichinavath-bot/AMDDST-app.git
-cd AMDDST-app
+# Installs root, frontend, and backend packages
+npm run install:all
+```
 
-# Install dependencies
-npm install
-
-# Start development server
+### 2. Start Both Frontend and Backend Concurrently
+```bash
+# Starts Express backend on :5000 and React frontend on :3000
 npm start
 ```
 
----
+### 3. Individual Service Execution
+```bash
+# Run only the React frontend
+npm run start:frontend
 
-## 🤖 Model Training
+# Run only the Express backend
+npm run start:backend
 
-The BART-base model was fine-tuned on MultiWOZ 2.1 dataset using Kaggle T4 GPU.
-```python
-# Key training details
-model = "facebook/bart-base"
-epochs = 1
-batch_size = 16
-learning_rate = 2e-5
-training_examples = 77,441  # includes augmented data
+# Run backend in auto-reload watch mode
+npm run dev
 ```
 
-**Data Augmentation:** Entity substitution to reduce domain bias
-**Post-processing:** Levenshtein distance for ASR error correction
+---
+
+## Model Benchmark & Training
+
+The BART-base model was fine-tuned on the MultiWOZ 2.1 dataset:
+```python
+model = "facebook/bart-base"
+parameters = "139M"
+training_dialogues = 77,441
+final_loss = 0.057
+augmentation = "Entity substitution to minimize domain bias"
+post_processing = "Levenshtein distance for ASR error correction"
+```
 
 ---
 
-## 📄 Research Paper
+## Citation & Research
 
 Based on: **"Adaptive Multi-Domain Dialogue State Tracking on Spoken Conversations"**
 - Published in IEEE/ACM Transactions on Audio, Speech, and Language Processing, Vol. 32, 2024
@@ -150,16 +143,6 @@ Based on: **"Adaptive Multi-Domain Dialogue State Tracking on Spoken Conversatio
 
 ---
 
-## 👨‍💻 Author
+## License
 
-**Chinavath Ganapathi**
-- 🎓 CSE '27 — Neil Gogte Institute of Technology
-- 🔗 [LinkedIn](https://www.linkedin.com/in/ganirathod)
-- 🤗 [HuggingFace](https://huggingface.co/ganirathod)
-- 💻 [GitHub](https://github.com/ganapathichinavath-bot)
-
----
-
-## 📝 License
-
-MIT License — feel free to use and modify.
+MIT License.
