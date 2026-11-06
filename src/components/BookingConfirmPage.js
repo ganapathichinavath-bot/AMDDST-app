@@ -3,6 +3,21 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import {
+  LuBed,
+  LuUtensils,
+  LuLandmark,
+  LuCar,
+  LuCircleCheck,
+  LuArrowLeft,
+  LuMapPin,
+  LuPhone,
+  LuStar,
+  LuCircleParking,
+  LuWifi,
+  LuDollarSign,
+  LuLoader
+} from 'react-icons/lu';
 
 function BookingConfirmPage(props) {
   const navigate = useNavigate();
@@ -20,7 +35,7 @@ function BookingConfirmPage(props) {
   const handleConfirm = async () => {
     setSaving(true);
     try {
-      const id = `BK${Date.now().toString().slice(-6)}`;
+      const id = `BK-${Date.now().toString().slice(-6)}`;
       setBookingId(id);
       if (props.user) {
         await addDoc(collection(db, 'bookings'), {
@@ -40,201 +55,292 @@ function BookingConfirmPage(props) {
 
   if (!booking) return null;
 
-  const getIcon = () => {
-    if (booking.type === 'hotel') return '🏨';
-    if (booking.type === 'restaurant') return '🍽️';
-    return '🎭';
+  const getDomainMeta = () => {
+    if (booking.type === 'hotel') {
+      return { icon: LuBed, label: 'Hotel Accommodation', color: '#6366F1' };
+    }
+    if (booking.type === 'restaurant') {
+      return { icon: LuUtensils, label: 'Dining Reservation', color: '#EC4899' };
+    }
+    if (booking.type === 'attraction') {
+      return { icon: LuLandmark, label: 'Attraction Booking', color: '#10B981' };
+    }
+    if (booking.type === 'taxi') {
+      return { icon: LuCar, label: 'Ground Transit Dispatch', color: '#F59E0B' };
+    }
+    return { icon: LuBed, label: 'Booking', color: '#6366F1' };
   };
 
-  const getGradient = () => {
-    if (booking.type === 'hotel') return 'linear-gradient(135deg, #4facfe, #00f2fe)';
-    if (booking.type === 'restaurant') return 'linear-gradient(135deg, #f093fb, #f5576c)';
-    return 'linear-gradient(135deg, #43e97b, #38f9d7)';
-  };
+  const meta = getDomainMeta();
+  const DomainIcon = meta.icon;
+
+  const detailItems = [
+    booking.address && { icon: LuMapPin, label: 'Address', value: booking.address },
+    booking.phone && { icon: LuPhone, label: 'Contact Phone', value: booking.phone },
+    booking.pricerange && { icon: LuDollarSign, label: 'Price Tier', value: booking.pricerange },
+    booking.area && { icon: LuMapPin, label: 'Area Sector', value: booking.area },
+    booking.stars && { icon: LuStar, label: 'Star Rating', value: `${booking.stars} Stars` },
+    booking.food && { icon: LuUtensils, label: 'Cuisine Style', value: booking.food },
+    booking.parking === 'yes' && { icon: LuCircleParking, label: 'Parking', value: 'Included On-Site' },
+    booking.internet === 'yes' && { icon: LuWifi, label: 'Internet', value: 'Complimentary WiFi' },
+  ].filter(Boolean);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-      display: 'flex', alignItems: 'center',
-      justifyContent: 'center', padding: 20,
-    }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#090D16',
+        color: '#F8FAFC',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+      }}
+    >
       <motion.div
         style={{
-          width: '100%', maxWidth: 480,
-          background: 'rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(30px)',
-          borderRadius: 24, overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.15)',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+          width: '100%',
+          maxWidth: 480,
+          background: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: 20,
+          overflow: 'hidden',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
         }}
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
         {/* Header */}
-        <div style={{
-          padding: '25px 30px',
-          background: getGradient(),
-          textAlign: 'center',
-        }}>
-          <motion.div
-            style={{ fontSize: 50, marginBottom: 10 }}
-            animate={confirmed ? { scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] } : {}}
-            transition={{ duration: 0.6 }}
+        <div
+          style={{
+            padding: '24px 28px',
+            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: `${meta.color}18`,
+              border: `1px solid ${meta.color}35`,
+              color: meta.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
           >
-            {confirmed ? '✅' : getIcon()}
-          </motion.div>
-          <h2 style={{ color: 'white', fontSize: 22, fontWeight: 800, marginBottom: 5 }}>
-            {confirmed ? 'Booking Confirmed!' : 'Confirm Your Booking'}
-          </h2>
-          {confirmed && (
-            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>
-              Booking ID: <strong>{bookingId}</strong>
-            </p>
-          )}
+            {confirmed ? <LuCircleCheck size={24} color="#10B981" /> : <DomainIcon size={22} />}
+          </div>
+
+          <div>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: meta.color,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              {meta.label}
+            </span>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F8FAFC', marginTop: 2 }}>
+              {confirmed ? 'Reservation Confirmed' : 'Review & Confirm'}
+            </h2>
+          </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: '25px 30px' }}>
+        {/* Content Body */}
+        <div style={{ padding: '24px 28px' }}>
 
-          {/* Item details */}
-          <div style={{
-            background: 'rgba(255,255,255,0.06)',
-            borderRadius: 16, padding: '18px 20px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            marginBottom: 20,
-          }}>
-            <h3 style={{ color: 'white', fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+          {/* Item Overview Card */}
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: 12,
+              padding: '16px 18px',
+              border: '1px solid rgba(255, 255, 255, 0.07)',
+              marginBottom: 18,
+            }}
+          >
+            <h3 style={{ color: '#F8FAFC', fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
               {booking.name}
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[
-                { icon: '📍', label: 'Address', value: booking.address },
-                { icon: '📞', label: 'Phone', value: booking.phone },
-                { icon: '💰', label: 'Price Range', value: booking.pricerange },
-                { icon: '🗺️', label: 'Area', value: booking.area },
-                booking.stars && { icon: '⭐', label: 'Stars', value: `${booking.stars} stars` },
-                booking.food && { icon: '🍴', label: 'Cuisine', value: booking.food },
-                booking.parking === 'yes' && { icon: '🅿️', label: 'Parking', value: 'Available' },
-                booking.internet === 'yes' && { icon: '📶', label: 'WiFi', value: 'Available' },
-              ].filter(Boolean).map((detail, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 14, flexShrink: 0 }}>{detail.icon}</span>
-                  <div>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', display: 'block' }}>
-                      {detail.label}
-                    </span>
-                    <span style={{ fontSize: 13, color: 'white', fontWeight: 500 }}>
-                      {detail.value}
-                    </span>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+              {detailItems.map((detail, idx) => {
+                const Icon = detail.icon;
+                return (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 6,
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#64748B',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Icon size={14} />
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1, display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 12, color: '#94A3B8' }}>{detail.label}</span>
+                      <span style={{ fontSize: 12, color: '#F8FAFC', fontWeight: 600, textTransform: 'capitalize' }}>
+                        {detail.value}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* User info */}
+          {/* User association card */}
           {props.user && (
-            <div style={{
-              background: 'rgba(102,126,234,0.1)',
-              border: '1px solid rgba(102,126,234,0.2)',
-              borderRadius: 12, padding: '14px 16px',
-              marginBottom: 20,
-            }}>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>Booking for</p>
-              <p style={{ fontSize: 14, color: 'white', fontWeight: 600 }}>
+            <div
+              style={{
+                background: 'rgba(79, 70, 229, 0.08)',
+                border: '1px solid rgba(79, 70, 229, 0.2)',
+                borderRadius: 10,
+                padding: '12px 16px',
+                marginBottom: 20,
+              }}
+            >
+              <p style={{ fontSize: 11, color: '#818CF8', fontWeight: 600, marginBottom: 2 }}>
+                PRIMARY CONTACT
+              </p>
+              <p style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>
                 {props.user.displayName || props.user.email}
               </p>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{props.user.email}</p>
             </div>
           )}
 
-          {/* Confirmed state */}
+          {/* Confirmed State vs Action Buttons */}
           {confirmed ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div style={{
-                background: 'rgba(67,233,123,0.15)',
-                border: '1px solid rgba(67,233,123,0.3)',
-                borderRadius: 12, padding: '16px',
-                textAlign: 'center', marginBottom: 20,
-              }}>
-                <p style={{ color: '#43e97b', fontWeight: 700, fontSize: 15, marginBottom: 5 }}>
-                  🎉 Your booking is confirmed!
+            <div>
+              <div
+                style={{
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  textAlign: 'center',
+                  marginBottom: 18,
+                }}
+              >
+                <p style={{ color: '#34D399', fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+                  Reference Code Assigned
                 </p>
-                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13 }}>
-                  Reference ID: <strong style={{ color: 'white' }}>{bookingId}</strong>
+                <p
+                  style={{
+                    color: '#F8FAFC',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    fontFamily: 'var(--font-mono, monospace)',
+                  }}
+                >
+                  {bookingId}
                 </p>
               </div>
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <motion.button
+                <button
                   onClick={() => navigate('/bookings')}
                   style={{
-                    flex: 1, padding: '12px',
-                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                    color: 'white', border: 'none', borderRadius: 12,
-                    fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                    flex: 1,
+                    padding: '11px',
+                    background: '#4F46E5',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
                   }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                 >
-                  📋 View Bookings
-                </motion.button>
-                <motion.button
+                  View in Reservations
+                </button>
+                <button
                   onClick={() => navigate('/chat')}
                   style={{
-                    flex: 1, padding: '12px',
-                    background: 'rgba(255,255,255,0.08)',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    borderRadius: 12, fontSize: 14,
-                    fontWeight: 700, cursor: 'pointer',
+                    flex: 1,
+                    padding: '11px',
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    color: '#CBD5E1',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
                   }}
-                  whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
                 >
-                  💬 New Search
-                </motion.button>
+                  Resume Console
+                </button>
               </div>
-            </motion.div>
+            </div>
           ) : (
             <div style={{ display: 'flex', gap: 10 }}>
-              <motion.button
+              <button
                 onClick={() => navigate('/chat')}
                 style={{
-                  flex: 1, padding: '12px',
-                  background: 'rgba(255,255,255,0.08)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 12, fontSize: 14,
-                  fontWeight: 700, cursor: 'pointer',
+                  flex: 1,
+                  padding: '11px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#CBD5E1',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
                 }}
-                whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                ← Go Back
-              </motion.button>
-              <motion.button
+                <LuArrowLeft size={14} /> Back
+              </button>
+
+              <button
                 onClick={handleConfirm}
                 disabled={saving}
                 style={{
-                  flex: 2, padding: '12px',
-                  background: saving ? 'rgba(67,233,123,0.3)' : 'linear-gradient(135deg, #43e97b, #38f9d7)',
-                  color: saving ? 'rgba(255,255,255,0.5)' : '#0f0c29',
-                  border: 'none', borderRadius: 12,
-                  fontSize: 14, fontWeight: 800,
+                  flex: 2,
+                  padding: '11px',
+                  background: saving ? 'rgba(79, 70, 229, 0.5)' : '#4F46E5',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
                   cursor: saving ? 'not-allowed' : 'pointer',
-                  boxShadow: saving ? 'none' : '0 8px 20px rgba(67,233,123,0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
                 }}
-                whileHover={!saving ? { scale: 1.02, boxShadow: '0 12px 30px rgba(67,233,123,0.5)' } : {}}
-                whileTap={!saving ? { scale: 0.98 } : {}}
               >
-                {saving ? '⏳ Confirming...' : '✅ Confirm Booking'}
-              </motion.button>
+                {saving ? (
+                  <>
+                    <LuLoader size={16} className="spin" style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <span>Confirm Reservation</span>
+                )}
+              </button>
             </div>
           )}
         </div>

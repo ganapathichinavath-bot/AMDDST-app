@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
+import {
+  LuBookmark,
+  LuBed,
+  LuUtensils,
+  LuLandmark,
+  LuCar,
+  LuArrowLeft,
+  LuMapPin,
+  LuPhone,
+  LuCircleCheck,
+  LuLayers,
+  LuSearch
+} from 'react-icons/lu';
 
 function BookingsPage(props) {
   const navigate = useNavigate();
@@ -31,13 +43,21 @@ function BookingsPage(props) {
     loadHistory();
   }, [props.user, navigate]);
 
-  const getIcon = (item) => {
-    if (!item) return '📋';
-    const t = ((item.name || item.title || '') + ' ' + (item.type || '')).toLowerCase();
-    if (item.type === 'hotel' || t.includes('hotel')) return '🏨';
-    if (item.type === 'restaurant' || t.includes('restaurant') || t.includes('food')) return '🍽️';
-    if (item.type === 'attraction' || t.includes('museum') || t.includes('theatre')) return '🎭';
-    return '📋';
+  const getDomainMeta = (item) => {
+    const t = ((item?.name || item?.title || '') + ' ' + (item?.type || '')).toLowerCase();
+    if (item?.type === 'hotel' || t.includes('hotel')) {
+      return { icon: LuBed, label: 'Hotel', color: '#6366F1' };
+    }
+    if (item?.type === 'restaurant' || t.includes('restaurant') || t.includes('food')) {
+      return { icon: LuUtensils, label: 'Dining', color: '#EC4899' };
+    }
+    if (item?.type === 'attraction' || t.includes('museum') || t.includes('theatre') || t.includes('park')) {
+      return { icon: LuLandmark, label: 'Attraction', color: '#10B981' };
+    }
+    if (item?.type === 'taxi' || t.includes('taxi') || t.includes('cab')) {
+      return { icon: LuCar, label: 'Transit', color: '#F59E0B' };
+    }
+    return { icon: LuBookmark, label: 'Booking', color: '#6366F1' };
   };
 
   const getCategory = (item) => {
@@ -45,6 +65,7 @@ function BookingsPage(props) {
     if (item.type === 'hotel') return 'hotel';
     if (item.type === 'restaurant') return 'restaurant';
     if (item.type === 'attraction') return 'attraction';
+    if (item.type === 'taxi') return 'taxi';
     return 'other';
   };
 
@@ -57,7 +78,7 @@ function BookingsPage(props) {
     if (days === 0) return 'Today';
     if (days === 1) return 'Yesterday';
     if (days < 7) return `${days} days ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const filtered = filter === 'all'
@@ -65,142 +86,343 @@ function BookingsPage(props) {
     : bookings.filter(b => getCategory(b) === filter);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)',
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '18px 40px',
-        background: 'rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex', alignItems: 'center', gap: 15,
-      }}>
-        <motion.button
+    <div style={{ minHeight: '100vh', background: '#090D16', color: '#F8FAFC' }}>
+
+      {/* Header Bar */}
+      <header
+        style={{
+          padding: '16px 36px',
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+        }}
+      >
+        <button
           onClick={() => navigate('/chat')}
-          style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 20 }}
-          whileHover={{ color: 'white', scale: 1.1 }}
-        >←</motion.button>
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#CBD5E1',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <LuArrowLeft size={16} />
+        </button>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #43e97b, #38f9d7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📋</div>
-          <span style={{ fontSize: 18, fontWeight: 900, background: 'linear-gradient(135deg, #43e97b, #38f9d7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Booking History</span>
+          <div
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              background: 'rgba(79, 70, 229, 0.15)',
+              color: '#818CF8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <LuBookmark size={18} />
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC' }}>
+            Confirmed Reservations
+          </span>
         </div>
-        <span style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>{bookings.length} total</span>
-      </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '30px 20px' }}>
+        <span
+          style={{
+            marginLeft: 'auto',
+            color: '#94A3B8',
+            fontSize: 12,
+            fontFamily: 'var(--font-mono, monospace)',
+          }}
+        >
+          {bookings.length} {bookings.length === 1 ? 'record' : 'records'}
+        </span>
+      </header>
 
-        {/* Filter tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 25, overflowX: 'auto', paddingBottom: 4 }}>
+      <div style={{ maxWidth: 840, margin: '0 auto', padding: '32px 24px' }}>
+
+        {/* Filter Navigation Tabs */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto', paddingBottom: 4 }}>
           {[
-            { key: 'all', label: '🌐 All' },
-            { key: 'hotel', label: '🏨 Hotels' },
-            { key: 'restaurant', label: '🍽️ Restaurants' },
-            { key: 'attraction', label: '🎭 Attractions' },
-          ].map(f => (
-            <motion.button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              style={{
-                padding: '8px 16px',
-                background: filter === f.key ? 'rgba(102,126,234,0.3)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${filter === f.key ? 'rgba(102,126,234,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                borderRadius: 20, color: filter === f.key ? 'white' : 'rgba(255,255,255,0.5)',
-                cursor: 'pointer', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
-              }}
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            >{f.label}</motion.button>
-          ))}
+            { key: 'all', label: 'All Records', icon: LuLayers },
+            { key: 'hotel', label: 'Accommodations', icon: LuBed },
+            { key: 'restaurant', label: 'Dining', icon: LuUtensils },
+            { key: 'attraction', label: 'Attractions', icon: LuLandmark },
+            { key: 'taxi', label: 'Transit', icon: LuCar },
+          ].map(f => {
+            const Icon = f.icon;
+            const active = filter === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                style={{
+                  padding: '7px 16px',
+                  background: active ? '#4F46E5' : 'rgba(255, 255, 255, 0.04)',
+                  border: `1px solid ${active ? '#6366F1' : 'rgba(255, 255, 255, 0.08)'}`,
+                  borderRadius: 8,
+                  color: active ? '#FFFFFF' : '#94A3B8',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Icon size={14} />
+                <span>{f.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Content */}
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1, 2, 3].map(i => (
-              <motion.div key={i} style={{ height: 80, borderRadius: 16, background: 'rgba(255,255,255,0.05)' }} animate={{ opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} />
+              <div
+                key={i}
+                style={{
+                  height: 90,
+                  borderRadius: 14,
+                  background: 'rgba(15, 23, 42, 0.65)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                }}
+              />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <motion.div style={{ textAlign: 'center', padding: '60px 20px' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div style={{ fontSize: 60, marginBottom: 15 }}>📋</div>
-            <h3 style={{ color: 'white', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>No bookings yet</h3>
-            <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 20 }}>Confirm a booking in chat to see it here</p>
-            <motion.button
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '60px 24px',
+              background: 'rgba(15, 23, 42, 0.5)',
+              borderRadius: 16,
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#64748B',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+              }}
+            >
+              <LuSearch size={22} />
+            </div>
+            <h3 style={{ color: '#F8FAFC', fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+              No reservations logged
+            </h3>
+            <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 24, maxWidth: 360, margin: '0 auto 24px' }}>
+              Confirm hotel bookings, restaurant tables, or taxi rides in the dialogue console to track them here.
+            </p>
+            <button
               onClick={() => navigate('/chat')}
-              style={{ padding: '12px 30px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-              whileHover={{ scale: 1.05 }}
-            >Start Chatting 🎯</motion.button>
-          </motion.div>
+              style={{
+                padding: '10px 24px',
+                background: '#4F46E5',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Launch Dialogue Console
+            </button>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {filtered.map((booking, i) => (
-              <motion.div
-                key={booking.id}
-                style={{
-                  background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)',
-                  borderRadius: 16, padding: '18px 20px',
-                  border: '1px solid rgba(255,255,255,0.08)', cursor: 'default',
-                }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                whileHover={{ background: 'rgba(255,255,255,0.08)' }}
-              >
-                <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                  <div style={{
-                    width: 46, height: 46, borderRadius: 12, flexShrink: 0,
-                    background: 'rgba(102,126,234,0.2)', border: '1px solid rgba(102,126,234,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-                  }}>
-                    {getIcon(booking)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
-                      <div>
-                        <p style={{ fontSize: 15, fontWeight: 700, color: 'white', marginBottom: 3 }}>
-                          {booking.name || booking.title || 'Booking'}
-                        </p>
-                        {booking.bookingId && (
-                          <p style={{ fontSize: 11, color: '#43e97b', marginBottom: 4, fontWeight: 600 }}>
-                            🎫 ID: {booking.bookingId}
+            {filtered.map((booking, i) => {
+              const meta = getDomainMeta(booking);
+              const DomainIcon = meta.icon;
+
+              return (
+                <div
+                  key={booking.id || i}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.75)',
+                    borderRadius: 14,
+                    padding: '18px 20px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                    <div
+                      style={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 10,
+                        flexShrink: 0,
+                        background: `${meta.color}15`,
+                        border: `1px solid ${meta.color}30`,
+                        color: meta.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <DomainIcon size={20} />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                        }}
+                      >
+                        <div>
+                          <p style={{ fontSize: 15, fontWeight: 700, color: '#F8FAFC', marginBottom: 2 }}>
+                            {booking.name || booking.title || 'Reservation'}
                           </p>
+                          {booking.bookingId && (
+                            <p
+                              style={{
+                                fontSize: 11,
+                                color: '#10B981',
+                                fontWeight: 600,
+                                fontFamily: 'var(--font-mono, monospace)',
+                              }}
+                            >
+                              Ref #{booking.bookingId}
+                            </p>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: '#34D399',
+                              background: 'rgba(16, 185, 129, 0.12)',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <LuCircleCheck size={12} /> Confirmed
+                          </span>
+                          <span style={{ fontSize: 11, color: '#64748B', marginLeft: 6 }}>
+                            {formatDate(booking.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {booking.address && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            fontSize: 12,
+                            color: '#94A3B8',
+                            marginTop: 6,
+                          }}
+                        >
+                          <LuMapPin size={13} style={{ flexShrink: 0, color: '#64748B' }} />
+                          <span>{booking.address}</span>
+                        </div>
+                      )}
+
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
+                        {booking.pricerange && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              color: '#CBD5E1',
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            Tier: {booking.pricerange}
+                          </span>
+                        )}
+
+                        {booking.area && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              color: '#CBD5E1',
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            Sector: {booking.area}
+                          </span>
+                        )}
+
+                        {booking.food && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              color: '#CBD5E1',
+                              textTransform: 'capitalize',
+                            }}
+                          >
+                            Cuisine: {booking.food}
+                          </span>
+                        )}
+
+                        {booking.phone && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: '#38BDF8',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <LuPhone size={12} /> {booking.phone}
+                          </span>
                         )}
                       </div>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-                        {formatDate(booking.createdAt)}
-                      </span>
-                    </div>
-                    {booking.address && (
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
-                        📍 {booking.address}
-                      </p>
-                    )}
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
-                      {booking.pricerange && (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(67,233,123,0.15)', color: '#43e97b', fontWeight: 600 }}>
-                          💰 {booking.pricerange}
-                        </span>
-                      )}
-                      {booking.area && (
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🗺️ {booking.area}</span>
-                      )}
-                      {booking.food && (
-                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🍴 {booking.food}</span>
-                      )}
-                      {booking.phone && (
-                        <span style={{ fontSize: 11, color: '#4facfe' }}>📞 {booking.phone}</span>
-                      )}
-                      {booking.status && (
-                        <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(67,233,123,0.15)', color: '#43e97b', fontWeight: 600 }}>
-                          ✅ {booking.status}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

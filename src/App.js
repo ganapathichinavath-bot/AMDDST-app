@@ -21,7 +21,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 3500);
+    const timer = setTimeout(() => setShowSplash(false), 900);
     return () => clearTimeout(timer);
   }, []);
 

@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 
 function SkeletonBlock({ width, height, borderRadius = 8, style = {} }) {
   return (
-    <motion.div
+    <div
       style={{
-        width, height, borderRadius,
-        background: 'rgba(255,255,255,0.06)',
+        width,
+        height,
+        borderRadius,
+        background: 'rgba(255, 255, 255, 0.04)',
         overflow: 'hidden',
         position: 'relative',
         ...style,
@@ -14,43 +16,43 @@ function SkeletonBlock({ width, height, borderRadius = 8, style = {} }) {
     >
       <motion.div
         style={{
-          position: 'absolute', top: 0, left: 0,
-          width: '100%', height: '100%',
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%)',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 50%, transparent 100%)',
         }}
         animate={{ x: ['-100%', '100%'] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
       />
-    </motion.div>
+    </div>
   );
 }
 
 export function ChatSkeleton() {
   return (
-    <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {/* Assistant message skeleton */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-        <SkeletonBlock width={34} height={34} borderRadius={10} style={{ flexShrink: 0 }} />
+    <div style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <SkeletonBlock width={32} height={32} borderRadius={8} style={{ flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <SkeletonBlock width={280} height={44} borderRadius={18} />
+          <SkeletonBlock width={280} height={42} borderRadius={12} />
           <SkeletonBlock width={80} height={10} borderRadius={4} />
         </div>
       </div>
 
-      {/* User message skeleton */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', justifyContent: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-          <SkeletonBlock width={200} height={44} borderRadius={18} />
+          <SkeletonBlock width={220} height={42} borderRadius={12} />
           <SkeletonBlock width={60} height={10} borderRadius={4} />
         </div>
-        <SkeletonBlock width={34} height={34} borderRadius={10} style={{ flexShrink: 0 }} />
+        <SkeletonBlock width={32} height={32} borderRadius={8} style={{ flexShrink: 0 }} />
       </div>
 
-      {/* Assistant message skeleton */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-        <SkeletonBlock width={34} height={34} borderRadius={10} style={{ flexShrink: 0 }} />
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        <SkeletonBlock width={32} height={32} borderRadius={8} style={{ flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <SkeletonBlock width={320} height={60} borderRadius={18} />
+          <SkeletonBlock width={340} height={56} borderRadius={12} />
           <SkeletonBlock width={80} height={10} borderRadius={4} />
         </div>
       </div>
@@ -60,13 +62,13 @@ export function ChatSkeleton() {
 
 export function ConversationSkeleton() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 12px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 4px' }}>
       {[1, 2, 3].map(i => (
-        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 4px' }}>
-          <SkeletonBlock width={24} height={24} borderRadius={6} style={{ flexShrink: 0 }} />
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '8px 4px' }}>
+          <SkeletonBlock width={20} height={20} borderRadius={6} style={{ flexShrink: 0 }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <SkeletonBlock width="80%" height={12} borderRadius={4} />
-            <SkeletonBlock width="60%" height={10} borderRadius={4} />
+            <SkeletonBlock width="75%" height={12} borderRadius={4} />
+            <SkeletonBlock width="50%" height={10} borderRadius={4} />
           </div>
         </div>
       ))}
@@ -76,27 +78,27 @@ export function ConversationSkeleton() {
 
 export function ProfileSkeleton() {
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: '40px 20px' }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <SkeletonBlock width={100} height={100} borderRadius="50%" style={{ margin: '0 auto 15px' }} />
-        <SkeletonBlock width={200} height={20} borderRadius={8} style={{ margin: '0 auto 8px' }} />
-        <SkeletonBlock width={150} height={14} borderRadius={6} style={{ margin: '0 auto' }} />
+    <div style={{ maxWidth: 600, margin: '0 auto', padding: '36px 20px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 30 }}>
+        <SkeletonBlock width={72} height={72} borderRadius="50%" style={{ margin: '0 auto 12px' }} />
+        <SkeletonBlock width={160} height={18} borderRadius={6} style={{ margin: '0 auto 8px' }} />
+        <SkeletonBlock width={120} height={12} borderRadius={4} style={{ margin: '0 auto' }} />
       </div>
-      <div style={{
-        background: 'rgba(255,255,255,0.05)',
-        borderRadius: 20, padding: 30,
-        border: '1px solid rgba(255,255,255,0.1)',
-      }}>
+      <div
+        style={{
+          background: 'rgba(15, 23, 42, 0.65)',
+          borderRadius: 16,
+          padding: 24,
+          border: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
         {[1, 2, 3, 4].map(i => (
-          <div key={i} style={{ marginBottom: 20 }}>
-            <SkeletonBlock width={80} height={10} borderRadius={4} style={{ marginBottom: 8 }} />
-            <SkeletonBlock width="100%" height={46} borderRadius={10} />
+          <div key={i} style={{ marginBottom: 16 }}>
+            <SkeletonBlock width={70} height={10} borderRadius={4} style={{ marginBottom: 6 }} />
+            <SkeletonBlock width="100%" height={40} borderRadius={8} />
           </div>
         ))}
-        <SkeletonBlock width="100%" height={46} borderRadius={12} />
       </div>
     </div>
   );
 }
-
-export default SkeletonBlock;

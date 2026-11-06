@@ -1,167 +1,269 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import {
+  LuBed,
+  LuUtensils,
+  LuLandmark,
+  LuCar,
+  LuMapPin,
+  LuPhone,
+  LuStar,
+  LuWifi,
+  LuCircleParking,
+  LuArrowRight,
+  LuTag
+} from 'react-icons/lu';
 
 function SearchResults({ results, type, onSelect }) {
   if (!results || results.length === 0) return null;
 
-  const getIcon = () => {
-    if (type === 'hotel') return '🏨';
-    if (type === 'restaurant') return '🍽️';
-    if (type === 'attraction') return '🎭';
-    if (type === 'taxi') return '🚖';
-    return '📍';
+  const getDomainMeta = () => {
+    if (type === 'hotel') {
+      return { icon: LuBed, label: 'Accommodations', color: '#6366F1' };
+    }
+    if (type === 'restaurant') {
+      return { icon: LuUtensils, label: 'Dining', color: '#EC4899' };
+    }
+    if (type === 'attraction') {
+      return { icon: LuLandmark, label: 'Attractions', color: '#10B981' };
+    }
+    if (type === 'taxi') {
+      return { icon: LuCar, label: 'Transit Options', color: '#F59E0B' };
+    }
+    return { icon: LuMapPin, label: 'Locations', color: '#6366F1' };
   };
 
-  const getGradient = () => {
-    if (type === 'hotel') return 'linear-gradient(135deg, #4facfe, #00f2fe)';
-    if (type === 'restaurant') return 'linear-gradient(135deg, #f093fb, #f5576c)';
-    if (type === 'attraction') return 'linear-gradient(135deg, #43e97b, #38f9d7)';
-    if (type === 'taxi') return 'linear-gradient(135deg, #fee140, #f5576c)';
-    return 'linear-gradient(135deg, #667eea, #764ba2)';
-  };
+  const meta = getDomainMeta();
+  const DomainIcon = meta.icon;
 
-  const getLabel = () => {
-    if (type === 'hotel') return 'hotels';
-    if (type === 'restaurant') return 'restaurants';
-    if (type === 'attraction') return 'attractions';
-    if (type === 'taxi') return 'taxis';
-    return 'results';
-  };
-
-  const getPriceColor = (price) => {
-    if (price === 'cheap') return '#43e97b';
-    if (price === 'moderate') return '#fee140';
-    if (price === 'expensive') return '#f5576c';
-    return '#a78bfa';
+  const getPriceBadge = (price) => {
+    const p = (price || '').toLowerCase();
+    if (p === 'cheap') {
+      return { text: 'Economy', color: '#34D399', bg: 'rgba(16, 185, 129, 0.14)' };
+    }
+    if (p === 'moderate') {
+      return { text: 'Standard', color: '#FBBF24', bg: 'rgba(245, 158, 11, 0.14)' };
+    }
+    if (p === 'expensive') {
+      return { text: 'Premium', color: '#F87171', bg: 'rgba(239, 68, 68, 0.14)' };
+    }
+    return { text: price, color: '#A5B4FC', bg: 'rgba(99, 102, 241, 0.14)' };
   };
 
   return (
     <motion.div
-      style={{ marginTop: 12 }}
-      initial={{ opacity: 0, y: 10 }}
+      style={{ marginTop: 14 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
+      transition={{ duration: 0.25 }}
     >
-      <p style={{
-        fontSize: 11, fontWeight: 700,
-        color: 'rgba(255,255,255,0.4)',
-        letterSpacing: 1, textTransform: 'uppercase',
-        marginBottom: 10,
-      }}>
-        {getIcon()} Found {results.length} {getLabel()} matching your request
-      </p>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+          fontSize: 11,
+          fontWeight: 700,
+          color: '#94A3B8',
+          letterSpacing: '0.05em',
+          textTransform: 'uppercase',
+          marginBottom: 10,
+        }}
+      >
+        <DomainIcon size={14} color={meta.color} />
+        <span>
+          Retrieved {results.length} verified {meta.label.toLowerCase()}
+        </span>
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {results.map((item, i) => (
-          <motion.div
-            key={i}
-            onClick={() => onSelect && onSelect(item, type)}
-            style={{
-              background: 'rgba(255,255,255,0.06)',
-              borderRadius: 12, padding: '14px 16px',
-              border: '1px solid rgba(255,255,255,0.08)',
-              cursor: 'pointer',
-            }}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.1 }}
-            whileHover={{ background: 'rgba(255,255,255,0.12)', scale: 1.01, border: '1px solid rgba(102,126,234,0.4)' }}
-            whileTap={{ scale: 0.99 }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {results.map((item, i) => {
+          const priceBadge = item.pricerange ? getPriceBadge(item.pricerange) : null;
 
-              {/* Icon */}
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                background: getGradient(),
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-              }}>
-                {getIcon()}
-              </div>
+          return (
+            <motion.div
+              key={i}
+              onClick={() => onSelect && onSelect(item, type)}
+              style={{
+                background: 'rgba(15, 23, 42, 0.75)',
+                borderRadius: 12,
+                padding: '14px 16px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              whileHover={{
+                background: 'rgba(27, 36, 59, 0.85)',
+                borderColor: 'rgba(99, 102, 241, 0.35)',
+                y: -1,
+              }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                {/* Domain Emblem */}
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    flexShrink: 0,
+                    background: `${meta.color}15`,
+                    border: `1px solid ${meta.color}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: meta.color,
+                  }}
+                >
+                  <DomainIcon size={18} />
+                </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Title & Badges */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC' }}>
+                        {item.name}
+                      </span>
 
-                {/* Name + price + stars row */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{item.name}</p>
-                    {item.pricerange && (
-                      <span style={{
-                        fontSize: 10, fontWeight: 700,
-                        color: getPriceColor(item.pricerange),
-                        background: `${getPriceColor(item.pricerange)}20`,
-                        padding: '2px 8px', borderRadius: 10,
-                        textTransform: 'uppercase', letterSpacing: 0.5,
-                      }}>
-                        {item.pricerange}
+                      {priceBadge && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: priceBadge.color,
+                            background: priceBadge.bg,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          {priceBadge.text}
+                        </span>
+                      )}
+
+                      {item.stars && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 2, color: '#FBBF24' }}>
+                          {Array.from({ length: item.stars }).map((_, s) => (
+                            <LuStar key={s} size={11} fill="#FBBF24" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        padding: '4px 10px',
+                        background: 'rgba(79, 70, 229, 0.15)',
+                        border: '1px solid rgba(79, 70, 229, 0.3)',
+                        borderRadius: 6,
+                        color: '#A5B4FC',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <span>Select</span>
+                      <LuArrowRight size={12} />
+                    </div>
+                  </div>
+
+                  {/* Address */}
+                  {item.address && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: 12,
+                        color: '#94A3B8',
+                        marginTop: 4,
+                      }}
+                    >
+                      <LuMapPin size={13} style={{ flexShrink: 0, color: '#64748B' }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.address}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Meta Amenities */}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {item.area && (
+                      <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
+                        Area: <strong>{item.area}</strong>
                       </span>
                     )}
-                    {item.stars && (
-                      <span style={{ fontSize: 11, color: '#fee140' }}>
-                        {'⭐'.repeat(item.stars)}
+
+                    {item.food && (
+                      <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
+                        Cuisine: <strong>{item.food}</strong>
+                      </span>
+                    )}
+
+                    {item.type && type === 'attraction' && (
+                      <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
+                        Category: <strong>{item.type}</strong>
+                      </span>
+                    )}
+
+                    {item.parking === 'yes' && (
+                      <span style={{ fontSize: 11, color: '#34D399', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <LuCircleParking size={13} /> Parking Included
+                      </span>
+                    )}
+
+                    {item.internet === 'yes' && (
+                      <span style={{ fontSize: 11, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <LuWifi size={13} /> High-Speed WiFi
+                      </span>
+                    )}
+
+                    {item.fee && (
+                      <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <LuTag size={12} /> Admission: {item.fee}
+                      </span>
+                    )}
+
+                    {type === 'taxi' && (
+                      <span style={{ fontSize: 11, color: '#FBBF24' }}>
+                        Dispatch: 24/7 On-Demand
                       </span>
                     )}
                   </div>
 
-                  {/* Select button */}
-                  <motion.div
-                    style={{
-                      padding: '4px 10px',
-                      background: 'rgba(102,126,234,0.2)',
-                      border: '1px solid rgba(102,126,234,0.4)',
-                      borderRadius: 8, color: '#a78bfa',
-                      fontSize: 11, fontWeight: 600,
-                      whiteSpace: 'nowrap', flexShrink: 0,
-                    }}
-                    whileHover={{ background: 'rgba(102,126,234,0.4)', color: 'white' }}
-                  >
-                    Select →
-                  </motion.div>
-                </div>
-
-                {/* Address */}
-                {item.address && (
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
-                    📍 {item.address}
-                  </p>
-                )}
-
-                {/* Tags row */}
-                <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
-                  {item.area && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🗺️ {item.area}</span>
-                  )}
-                  {item.food && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🍴 {item.food}</span>
-                  )}
-                  {item.type && type === 'attraction' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🎪 {item.type}</span>
-                  )}
-                  {item.parking === 'yes' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🅿️ Parking</span>
-                  )}
-                  {item.internet === 'yes' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>📶 WiFi</span>
-                  )}
-                  {item.fee && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>💰 {item.fee}</span>
-                  )}
-                  {/* Taxi specific tags */}
-                  {type === 'taxi' && (
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>🚖 Available 24/7</span>
+                  {/* Phone */}
+                  {item.phone && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        fontSize: 11,
+                        color: '#38BDF8',
+                        marginTop: 6,
+                      }}
+                    >
+                      <LuPhone size={12} />
+                      <span>{item.phone}</span>
+                    </div>
                   )}
                 </div>
-
-                {/* Phone */}
-                {item.phone && (
-                  <p style={{ fontSize: 11, color: '#4facfe', marginTop: 5 }}>
-                    📞 {item.phone}
-                  </p>
-                )}
               </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          );
+        })}
       </div>
     </motion.div>
   );

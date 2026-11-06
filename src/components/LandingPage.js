@@ -3,40 +3,99 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
+import BrandLogo from './BrandLogo';
+import {
+  LuBed,
+  LuUtensils,
+  LuLandmark,
+  LuCar,
+  LuAward,
+  LuDatabase,
+  LuCpu,
+  LuTrendingDown,
+  LuLayers,
+  LuMic,
+  LuMessagesSquare,
+  LuHistory,
+  LuArrowRight,
+  LuUser,
+  LuLogOut,
+  LuShieldCheck,
+  LuExternalLink
+} from 'react-icons/lu';
 
 function LandingPage(props) {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const features = [
-    { icon: '🎙️', title: 'Voice Input', desc: 'Speak naturally and let AI understand your travel needs in real time', grad: 'linear-gradient(135deg, #667eea, #764ba2)' },
-    { icon: '💬', title: 'Smart Chat', desc: 'Multi-turn conversation — AI remembers context across your entire session', grad: 'linear-gradient(135deg, #f093fb, #f5576c)' },
-    { icon: '🏨', title: 'Hotel Booking', desc: 'Find hotels by area, price, parking, WiFi and star rating instantly', grad: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
-    { icon: '🍽️', title: 'Restaurants', desc: 'Discover dining spots by cuisine, location and budget', grad: 'linear-gradient(135deg, #43e97b, #38f9d7)' },
-    { icon: '🎭', title: 'Attractions', desc: 'Explore museums, cinemas, theatres, parks and galleries nearby', grad: 'linear-gradient(135deg, #fa709a, #fee140)' },
-    { icon: '🚖', title: 'Taxi Booking', desc: 'Book a cab instantly — just say "I need a taxi" and we handle the rest', grad: 'linear-gradient(135deg, #fee140, #f5576c)' },
-    { icon: '🧠', title: 'AI Powered', desc: 'BART-base fine-tuned on 77K+ dialogues — DSTC10 3rd place architecture', grad: 'linear-gradient(135deg, #a18cd1, #fbc2eb)' },
-    { icon: '📋', title: 'Booking History', desc: 'All your confirmed bookings saved with unique booking IDs', grad: 'linear-gradient(135deg, #38f9d7, #667eea)' },
-  ];
-
-  // Updated stats — epoch 1 complete, loss improved from 0.12 to 0.057
-  const stats = [
-    { value: '77K+', label: 'Training Examples', icon: '📊' },
-    { value: '139M', label: 'Parameters', icon: '🧠' },
-    { value: '3rd', label: 'DSTC10 Place', icon: '🏆' },
-    { value: '0.057', label: 'Training Loss', icon: '📉' },
-    { value: '4', label: 'Domains', icon: '🌐' },
-  ];
-
   const domains = [
-    { icon: '🏨', label: 'Hotels', color: '#4facfe' },
-    { icon: '🍽️', label: 'Restaurants', color: '#f093fb' },
-    { icon: '🎭', label: 'Attractions', color: '#43e97b' },
-    { icon: '🚖', label: 'Taxis', color: '#fee140' },
+    { id: 'hotel', label: 'Accommodations', icon: LuBed, accent: '#6366F1' },
+    { id: 'restaurant', label: 'Dining & Cuisine', icon: LuUtensils, accent: '#EC4899' },
+    { id: 'attraction', label: 'Attractions & Culture', icon: LuLandmark, accent: '#10B981' },
+    { id: 'taxi', label: 'Ground Transit', icon: LuCar, accent: '#F59E0B' },
+  ];
+
+  const stats = [
+    { value: '77,441', label: 'MultiWOZ Dialogues', icon: LuDatabase },
+    { value: '139M', label: 'BART Parameters', icon: LuCpu },
+    { value: '3rd Place', label: 'DSTC-10 Benchmark', icon: LuAward },
+    { value: '0.057', label: 'Converged Cross-Entropy', icon: LuTrendingDown },
+    { value: '4 Domains', label: 'State Tracking Slots', icon: LuLayers },
+  ];
+
+  const features = [
+    {
+      icon: LuMic,
+      title: 'Acoustic Robustness',
+      desc: 'Integrates real-time speech processing with Levenshtein distance correction to recover from noisy ASR phoneme transcription errors.',
+      color: '#6366F1',
+    },
+    {
+      icon: LuMessagesSquare,
+      title: 'Multi-Turn Context Tracking',
+      desc: 'Maintains comprehensive belief states across extended conversation trajectories without slot decay or hallucination.',
+      color: '#06B6D4',
+    },
+    {
+      icon: LuBed,
+      title: 'Accommodations Engine',
+      desc: 'Extracts price tiers, geographic sectors (North, Centre, South, East, West), star ratings, and amenities like parking and WiFi.',
+      color: '#818CF8',
+    },
+    {
+      icon: LuUtensils,
+      title: 'Culinary Intelligence',
+      desc: 'Filters dining options by regional cuisine, dietary requirements, price bracket, and neighborhood seating availability.',
+      color: '#F472B6',
+    },
+    {
+      icon: LuLandmark,
+      title: 'Cultural Landmarks',
+      desc: 'Tracks intents for museums, theaters, cinemas, historical sites, and recreational parks across Cambridge.',
+      color: '#34D399',
+    },
+    {
+      icon: LuCar,
+      title: 'Transit Dispatch',
+      desc: 'Resolves passenger pickup points, destinations, and timing constraints into structured vehicle booking state.',
+      color: '#FBBF24',
+    },
+    {
+      icon: LuCpu,
+      title: 'Fine-Tuned BART Engine',
+      desc: 'Transformer-based sequence-to-sequence model optimized on MultiWOZ 2.1 dataset with entity substitution augmentations.',
+      color: '#A78BFA',
+    },
+    {
+      icon: LuHistory,
+      title: 'Audited Session Logs',
+      desc: 'Secure Firestore persistence for past sessions, slot state histories, and verified reservation confirmation codes.',
+      color: '#38BDF8',
+    },
   ];
 
   const userName = props.user?.displayName || props.user?.email?.split('@')[0] || '';
-  const userInitial = userName ? userName[0].toUpperCase() : '';
+  const userInitial = userName ? userName[0].toUpperCase() : 'U';
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -46,19 +105,110 @@ function LandingPage(props) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)' }}>
+    <div style={{ minHeight: '100vh', background: '#090D16', color: '#F8FAFC', position: 'relative', overflowX: 'hidden' }}>
 
-      {/* Logout modal */}
+      {/* Subtle background glow */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: 1000,
+          height: 500,
+          background: 'radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 80%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Sign Out Modal */}
       <AnimatePresence>
         {showLogoutModal && (
-          <motion.div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div style={{ background: 'rgba(15,12,41,0.98)', backdropFilter: 'blur(30px)', borderRadius: 20, padding: '32px 28px', width: '100%', maxWidth: 340, border: '1px solid rgba(255,255,255,0.15)', textAlign: 'center' }} initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}>
-              <div style={{ fontSize: 40, marginBottom: 14 }}>👋</div>
-              <h3 style={{ color: 'white', fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Sign out?</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>Your conversations are saved. You can sign back in anytime.</p>
+          <motion.div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.75)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              style={{
+                background: '#0F172A',
+                borderRadius: 16,
+                padding: '32px 28px',
+                width: '100%',
+                maxWidth: 380,
+                border: '1px solid rgba(255,255,255,0.12)',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+              }}
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  color: '#EF4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 16,
+                }}
+              >
+                <LuLogOut size={22} />
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#F8FAFC', marginBottom: 6 }}>
+                Sign out of AMDDST?
+              </h3>
+              <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.6, marginBottom: 24 }}>
+                Your saved sessions and active booking states are securely stored. You can return at any time.
+              </p>
               <div style={{ display: 'flex', gap: 10 }}>
-                <motion.button onClick={() => setShowLogoutModal(false)} style={{ flex: 1, padding: '11px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)' }} whileTap={{ scale: 0.98 }}>Cancel</motion.button>
-                <motion.button onClick={handleLogout} style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg, #f5576c, #f093fb)', border: 'none', borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer' }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Sign Out</motion.button>
+                <button
+                  onClick={() => setShowLogoutModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 10,
+                    color: '#CBD5E1',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    background: '#EF4444',
+                    border: 'none',
+                    borderRadius: 10,
+                    color: '#FFFFFF',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Sign Out
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -67,166 +217,578 @@ function LandingPage(props) {
 
       {/* Navbar */}
       <motion.nav
-        style={{ padding: '16px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(15,12,41,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.08)', position: 'sticky', top: 0, zIndex: 100 }}
-        initial={{ y: -60 }} animate={{ y: 0 }} transition={{ duration: 0.5 }}
+        style={{
+          padding: '16px 40px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: 'rgba(9, 13, 22, 0.85)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+        }}
+        initial={{ y: -30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
       >
-        <motion.div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} whileHover={{ scale: 1.03 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg, #667eea, #764ba2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🎯</div>
-          <span style={{ fontSize: 22, fontWeight: 900, background: 'linear-gradient(135deg, #667eea, #f093fb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AMDDST</span>
-        </motion.div>
+        <div onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <BrandLogo size={36} subtitle="Dialogue State Tracker" />
+        </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {props.user ? (
             <>
-              <motion.button onClick={() => navigate('/chat')} style={{ padding: '8px 18px', background: 'linear-gradient(135deg, #667eea, #764ba2)', border: 'none', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 15px rgba(102,126,234,0.3)' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>🚀 Open Chat</motion.button>
-              <motion.div onClick={() => navigate('/profile')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px 6px 8px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 24, cursor: 'pointer' }} whileHover={{ background: 'rgba(102,126,234,0.2)', scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg, #667eea, #f093fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 13 }}>{userInitial}</div>
-                <span style={{ fontSize: 13, color: 'white', fontWeight: 500, maxWidth: 110, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</span>
-              </motion.div>
-              <motion.button onClick={() => setShowLogoutModal(true)} style={{ padding: '8px 14px', border: '1px solid rgba(245,87,108,0.35)', borderRadius: 10, background: 'rgba(245,87,108,0.1)', color: '#f5576c', fontWeight: 600, cursor: 'pointer', fontSize: 13 }} whileHover={{ background: 'rgba(245,87,108,0.22)', scale: 1.03 }} whileTap={{ scale: 0.97 }}>Logout</motion.button>
+              <motion.button
+                onClick={() => navigate('/chat')}
+                style={{
+                  padding: '9px 18px',
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
+                  border: '1px solid rgba(99, 102, 241, 0.4)',
+                  borderRadius: 10,
+                  color: '#FFFFFF',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  boxShadow: '0 2px 10px rgba(79, 70, 229, 0.3)',
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <LuMessagesSquare size={15} /> Launch Console
+              </motion.button>
+
+              <div
+                onClick={() => navigate('/profile')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 14px 6px 8px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 24,
+                  cursor: 'pointer',
+                }}
+              >
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    background: '#4F46E5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: 12,
+                  }}
+                >
+                  {userInitial}
+                </div>
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: '#F8FAFC',
+                    fontWeight: 500,
+                    maxWidth: 120,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {userName}
+                </span>
+              </div>
+
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                title="Sign Out"
+                style={{
+                  padding: '8px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 10,
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <LuLogOut size={16} />
+              </button>
             </>
           ) : (
             <>
-              <motion.button onClick={() => navigate('/login')} style={{ padding: '8px 22px', background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.08)', scale: 1.05 }} whileTap={{ scale: 0.95 }}>Login</motion.button>
-              <motion.button onClick={() => navigate('/chat')} style={{ padding: '8px 22px', background: 'linear-gradient(135deg, #667eea, #764ba2)', border: 'none', borderRadius: 10, color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 15px rgba(102,126,234,0.3)' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>Try Now 🚀</motion.button>
+              <button
+                onClick={() => navigate('/login')}
+                style={{
+                  padding: '9px 18px',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10,
+                  color: '#CBD5E1',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Sign In
+              </button>
+              <motion.button
+                onClick={() => navigate('/chat')}
+                style={{
+                  padding: '9px 20px',
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
+                  border: '1px solid rgba(99, 102, 241, 0.4)',
+                  borderRadius: 10,
+                  color: '#FFFFFF',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 10px rgba(79, 70, 229, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Launch Console <LuArrowRight size={15} />
+              </motion.button>
             </>
           )}
         </div>
       </motion.nav>
 
-      {/* Hero */}
-      <div style={{ padding: '100px 40px 60px', textAlign: 'center', position: 'relative' }}>
-        <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+      {/* Hero Section */}
+      <section style={{ padding: '80px 24px 60px', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
-          <motion.div style={{ display: 'inline-block', padding: '6px 18px', background: 'rgba(102,126,234,0.2)', border: '1px solid rgba(102,126,234,0.4)', borderRadius: 20, color: '#a78bfa', fontSize: 13, fontWeight: 600, marginBottom: 20 }} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.3 }}>
-            🏆 DSTC10 Challenge — 3rd Place Globally
+          {/* Academic Badge */}
+          <motion.div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              background: 'rgba(99, 102, 241, 0.1)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              borderRadius: 999,
+              color: '#A5B4FC',
+              fontSize: 12,
+              fontWeight: 600,
+              letterSpacing: '0.02em',
+              marginBottom: 24,
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <LuAward size={15} color="#818CF8" />
+            <span>DSTC-10 Benchmark · 3rd Place Globally · IEEE TASLP</span>
           </motion.div>
 
-          {props.user && (
-            <motion.div style={{ display: 'inline-block', padding: '8px 20px', background: 'rgba(67,233,123,0.15)', border: '1px solid rgba(67,233,123,0.3)', borderRadius: 20, color: '#43e97b', fontSize: 14, fontWeight: 600, marginBottom: 20, marginLeft: 10 }} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}>
-              👋 Welcome back, {userName}!
-            </motion.div>
-          )}
-
-          <h1 style={{ fontSize: 'clamp(32px, 6vw, 64px)', fontWeight: 900, lineHeight: 1.1, marginBottom: 20, color: 'white' }}>
-            Your AI-Powered
+          <motion.h1
+            style={{
+              fontSize: 'clamp(36px, 5.5vw, 62px)',
+              fontWeight: 800,
+              lineHeight: 1.15,
+              letterSpacing: '-0.03em',
+              marginBottom: 22,
+              color: '#FFFFFF',
+            }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            Adaptive Multi-Domain
             <br />
-            <span style={{ background: 'linear-gradient(135deg, #667eea, #f093fb, #4facfe)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Travel Assistant
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #818CF8 0%, #C084FC 50%, #38BDF8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Dialogue State Tracker
             </span>
-          </h1>
+          </motion.h1>
 
-          <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.65)', maxWidth: 580, margin: '0 auto 30px', lineHeight: 1.8 }}>
-            Tell us what you need in plain language. Our AI tracks your intent and helps you find the perfect hotel, restaurant, attraction or taxi.
-          </p>
+          <motion.p
+            style={{
+              fontSize: 'clamp(15px, 2vw, 18px)',
+              color: '#94A3B8',
+              maxWidth: 680,
+              margin: '0 auto 36px',
+              lineHeight: 1.7,
+            }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            State-of-the-art conversational tracking fine-tuned on the MultiWOZ 2.1 benchmark.
+            Accurately tracks user intent, recovers phoneme transcription errors via Levenshtein post-processing, and resolves queries across four core urban domains.
+          </motion.p>
 
-          {/* Domain pills */}
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {domains.map((d, i) => (
-              <motion.div
-                key={i}
-                onClick={() => navigate('/chat')}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 18px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${d.color}40`, borderRadius: 20, cursor: 'pointer' }}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 + i * 0.1 }}
-                whileHover={{ background: `${d.color}20`, scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          {/* Domain Chips */}
+          <motion.div
+            style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {domains.map((d) => {
+              const Icon = d.icon;
+              return (
+                <div
+                  key={d.id}
+                  onClick={() => navigate('/chat')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 16px',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.09)',
+                    borderRadius: 999,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: '#CBD5E1',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = d.accent;
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.09)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                  }}
+                >
+                  <Icon size={16} color={d.accent} />
+                  <span>{d.label}</span>
+                </div>
+              );
+            })}
+          </motion.div>
+
+          {/* CTA Buttons */}
+          <motion.div
+            style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <motion.button
+              onClick={() => navigate('/chat')}
+              style={{
+                padding: '14px 34px',
+                background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
+                color: '#FFFFFF',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                borderRadius: 12,
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(79, 70, 229, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+              }}
+              whileHover={{ scale: 1.02, boxShadow: '0 6px 25px rgba(79, 70, 229, 0.5)' }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <LuMessagesSquare size={18} />
+              {props.user ? 'Resume Dialogue Console' : 'Start Dialogue Session'}
+            </motion.button>
+
+            {!props.user ? (
+              <motion.button
+                onClick={() => navigate('/login')}
+                style={{
+                  padding: '14px 32px',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: '#F8FAFC',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: 12,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                whileHover={{ background: 'rgba(255,255,255,0.1)', scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <span style={{ fontSize: 16 }}>{d.icon}</span>
-                <span style={{ fontSize: 13, color: d.color, fontWeight: 600 }}>{d.label}</span>
-              </motion.div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', gap: 15, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <motion.button onClick={() => navigate('/chat')} style={{ padding: '15px 38px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: '0 8px 30px rgba(102,126,234,0.5)' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              {props.user ? '💬 Continue Chatting' : '🚀 Start Chatting'}
-            </motion.button>
-            {!props.user && (
-              <motion.button onClick={() => navigate('/login')} style={{ padding: '15px 38px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(10px)' }} whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                Create Account
+                Sign In / Register
+              </motion.button>
+            ) : (
+              <motion.button
+                onClick={() => navigate('/profile')}
+                style={{
+                  padding: '14px 32px',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: '#F8FAFC',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: 12,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+                whileHover={{ background: 'rgba(255,255,255,0.1)', scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <LuUser size={16} /> Account Profile
               </motion.button>
             )}
-            {props.user && (
-              <motion.button onClick={() => navigate('/profile')} style={{ padding: '15px 38px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 14, fontSize: 16, fontWeight: 700, cursor: 'pointer', backdropFilter: 'blur(10px)' }} whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                👤 My Profile
-              </motion.button>
-            )}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Stats */}
-      <div style={{ padding: '0 40px 80px' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
-          {stats.map((stat, i) => (
-            <motion.div
-              key={i}
-              style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 16, padding: '24px 16px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-              whileHover={{ scale: 1.05, background: 'rgba(255,255,255,0.1)' }}
-            >
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{stat.icon}</div>
-              <p style={{ fontSize: 34, fontWeight: 900, background: 'linear-gradient(135deg, #667eea, #f093fb)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: 1 }}>{stat.value}</p>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 6 }}>{stat.label}</p>
-            </motion.div>
-          ))}
+          </motion.div>
         </div>
-      </div>
+      </section>
 
-      {/* Features */}
-      <div style={{ padding: '0 40px 100px', maxWidth: 1200, margin: '0 auto' }}>
-        <motion.div style={{ textAlign: 'center', marginBottom: 60 }} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-          <h2 style={{ fontSize: 36, fontWeight: 800, color: 'white', marginBottom: 12 }}>Everything You Need</h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16 }}>4 domains · powered by state-of-the-art NLP · deployed end-to-end</p>
-        </motion.div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-          {features.map((feature, i) => (
-            <motion.div
-              key={i}
-              style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: '28px', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)', cursor: 'pointer' }}
-              initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-              whileHover={{ y: -6, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: feature.grad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 16, boxShadow: '0 8px 20px rgba(0,0,0,0.25)' }}>
-                {feature.icon}
-              </div>
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: 'white', marginBottom: 8 }}>{feature.title}</h3>
-              <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, fontSize: 13 }}>{feature.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* CTA */}
-      <div style={{ padding: '60px 40px 80px', textAlign: 'center' }}>
-        <motion.div
-          style={{ maxWidth: 640, margin: '0 auto', background: 'linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15))', borderRadius: 24, padding: '56px 40px', border: '1px solid rgba(102,126,234,0.25)' }}
-          initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+      {/* Metrics Section */}
+      <section style={{ padding: '20px 24px 70px', position: 'relative', zIndex: 1 }}>
+        <div
+          style={{
+            maxWidth: 1080,
+            margin: '0 auto',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 16,
+          }}
         >
-          <h2 style={{ fontSize: 32, fontWeight: 800, color: 'white', marginBottom: 12 }}>
-            {props.user ? `Ready to explore, ${userName}?` : 'Ready to get started?'}
+          {stats.map((stat, i) => {
+            const Icon = stat.icon;
+            return (
+              <div
+                key={i}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.65)',
+                  borderRadius: 14,
+                  padding: '22px 20px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(10px)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    color: '#818CF8',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 12px',
+                  }}
+                >
+                  <Icon size={18} />
+                </div>
+                <p
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 800,
+                    letterSpacing: '-0.02em',
+                    color: '#F8FAFC',
+                    marginBottom: 4,
+                  }}
+                >
+                  {stat.value}
+                </p>
+                <p style={{ color: '#94A3B8', fontSize: 12, fontWeight: 500 }}>
+                  {stat.label}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Architecture & Capabilities Section */}
+      <section style={{ padding: '30px 24px 90px', maxWidth: 1140, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: 50 }}>
+          <h2
+            style={{
+              fontSize: 'clamp(26px, 3.5vw, 36px)',
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
+              color: '#FFFFFF',
+              marginBottom: 12,
+            }}
+          >
+            System Capabilities
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.55)', marginBottom: 30, fontSize: 15 }}>
-            {props.user ? 'Your AI travel assistant is waiting.' : 'Hotels · Restaurants · Attractions · Taxis — all in one place.'}
+          <p style={{ color: '#94A3B8', fontSize: 15, maxWidth: 600, margin: '0 auto' }}>
+            Multi-domain slot value inference with phoneme-level error correction and real-time database validation.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <motion.button onClick={() => navigate('/chat')} style={{ padding: '14px 36px', background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(102,126,234,0.4)' }} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              {props.user ? 'Go to Chat 🎯' : 'Start for Free 🎯'}
-            </motion.button>
-            {props.user && (
-              <motion.button onClick={() => navigate('/profile')} style={{ padding: '14px 36px', background: 'rgba(255,255,255,0.08)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: 'pointer' }} whileHover={{ background: 'rgba(255,255,255,0.15)', scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                👤 View Profile
-              </motion.button>
-            )}
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: 20,
+          }}
+        >
+          {features.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={i}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.65)',
+                  borderRadius: 16,
+                  padding: '24px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.35)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 10,
+                    background: `${item.color}18`,
+                    color: item.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                  }}
+                >
+                  <Icon size={20} />
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', marginBottom: 8 }}>
+                  {item.title}
+                </h3>
+                <p style={{ color: '#94A3B8', lineHeight: 1.6, fontSize: 13 }}>
+                  {item.desc}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* CTA Box */}
+      <section style={{ padding: '0 24px 80px', position: 'relative', zIndex: 1 }}>
+        <div
+          style={{
+            maxWidth: 780,
+            margin: '0 auto',
+            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)',
+            borderRadius: 20,
+            padding: '48px 36px',
+            border: '1px solid rgba(99, 102, 241, 0.25)',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+          }}
+        >
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 14,
+              background: 'rgba(79, 70, 229, 0.2)',
+              color: '#818CF8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px',
+            }}
+          >
+            <LuShieldCheck size={24} />
           </div>
-        </motion.div>
-      </div>
+
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', marginBottom: 10 }}>
+            Ready to test dialogue tracking?
+          </h2>
+          <p style={{ color: '#94A3B8', fontSize: 14, marginBottom: 28, maxWidth: 500, margin: '0 auto 28px' }}>
+            Experience natural dialogue state tracking with voice input, audio file upload, and real-time MultiWOZ entity extraction.
+          </p>
+
+          <motion.button
+            onClick={() => navigate('/chat')}
+            style={{
+              padding: '13px 32px',
+              background: 'linear-gradient(135deg, #4F46E5 0%, #4338CA 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(79, 70, 229, 0.4)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Open Dialogue Console <LuArrowRight size={16} />
+          </motion.button>
+        </div>
+      </section>
 
       {/* Footer */}
-      <div style={{ padding: '25px 40px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-          Built with ❤️ by Gani Rathod | AMDDST — IEEE Research Implementation | Training Loss: 0.12 → 0.057
-        </p>
-      </div>
+      <footer
+        style={{
+          padding: '30px 40px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          background: 'rgba(9, 13, 22, 0.95)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          fontSize: 13,
+          color: '#64748B',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <BrandLogo size={24} showText={false} />
+          <span>AMDDST © 2026 · IEEE DSTC-10 Implementation</span>
+        </div>
+
+        <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+          <a
+            href="https://huggingface.co/spaces/ganirathod/amddst-demo"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#94A3B8' }}
+          >
+            HuggingFace Space <LuExternalLink size={12} />
+          </a>
+          <a
+            href="https://github.com/ganapathichinavath-bot/AMDDST-app"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#94A3B8' }}
+          >
+            GitHub Repository <LuExternalLink size={12} />
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
