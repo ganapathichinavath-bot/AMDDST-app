@@ -20,9 +20,7 @@ import {
   searchHotels,
   searchRestaurants,
   searchAttractions,
-  searchTaxis,
-  isGreeting,
-  isAppInfoQuery
+  searchTaxis
 } from '../data/database';
 import SearchResults from '../components/SearchResults';
 import { ChatSkeleton, ConversationSkeleton } from '../components/SkeletonLoader';
@@ -48,35 +46,44 @@ import {
   LuArrowLeft
 } from 'react-icons/lu';
 
-function getSmartResponse(text, userName) {
-  const name = userName ? `, ${userName}` : '';
-  if (isGreeting(text)) {
-    return {
-      message: `Welcome to AMDDST${name} — Adaptive Multi-Domain Dialogue State Tracker.\n\nI can assist you across four key domains:\n• **Accommodations** — Query hotels by geographic sector, price range, parking, and amenities\n• **Dining** — Filter restaurants by cuisine type, neighborhood, and price tier\n• **Attractions** — Discover museums, cinemas, theatres, and parks\n• **Transit** — On-demand taxi and ground transportation bookings\n\nHow may I assist your travel inquiry today?`
-    };
-  }
-  if (isAppInfoQuery(text)) {
-    return {
-      message: `**AMDDST Architecture Overview:**\n\n• **Model**: Fine-tuned Sequence-to-Sequence BART with entity substitution augmentation\n• **Benchmark**: DSTC-10 multi-domain benchmark track\n• **Loss Metric**: 0.057 converged cross-entropy\n• **Domains**: Accommodations, Dining, Attractions, Transit (Cambridge MultiWOZ 2.1 ontology)\n• **Speech Robustness**: Integrated Levenshtein phonetic distance error recovery`
-    };
-  }
-  return null;
+function isGreeting(text) {
+  const t = text.toLowerCase().trim();
+  const greetingExact = /^(hi|hello|hey|hiya|howdy|greetings|good morning|good afternoon|good evening|sup|what'?s up|yo|how are you|how'?s it going|how are you doing|hey there|hello there)[\s!.,?]*$/i;
+  const greetingPrefix = /^(hi|hello|hey|hiya|howdy|good morning|good afternoon|good evening)[\s!.,?]+/i;
+  return greetingExact.test(t) || (greetingPrefix.test(t) && !detectDomainFromText(t));
+}
+
+function isAppInfoQuery(text) {
+  const t = text.toLowerCase().trim();
+  const infoPattern = /(what can you do|what do you do|help|how does this work|what is this app|what are you|who are you|features|capabilities|what can i ask|how can you help|explain yourself)/i;
+  return infoPattern.test(t);
 }
 
 function detectDomainFromText(text) {
   const t = text.toLowerCase();
-  if (t.includes('hotel') || t.includes('stay') || t.includes('room') || t.includes('guesthouse') || t.includes('lodge') || t.includes('b&b') || t.includes('accommodation') || t.includes('place to stay')) {
-    return 'hotel';
-  }
-  if (t.includes('food') || t.includes('restaurant') || t.includes('eat') || t.includes('dine') || t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('cuisine') || t.includes('italian') || t.includes('chinese') || t.includes('indian') || t.includes('thai') || t.includes('mexican') || t.includes('british')) {
-    return 'restaurant';
-  }
-  if (t.includes('museum') || t.includes('theatre') || t.includes('theater') || t.includes('cinema') || t.includes('park') || t.includes('attraction') || t.includes('gallery') || t.includes('visit') || t.includes('sightseeing') || t.includes('place to visit')) {
-    return 'attraction';
-  }
-  if (t.includes('taxi') || t.includes('cab') || t.includes('ride') || t.includes('transit') || t.includes('drive me') || t.includes('pick me up') || t.includes('pickup') || t.includes('drop me') || t.includes('car service') || t.includes('book a ride') || t.includes('call a cab')) {
-    return 'taxi';
-  }
+
+  // 1. Hotel / Accommodation Domain (Word boundaries)
+  const hotelKeywords = /\b(hotel|hotels|guesthouse|guesthouses|lodge|lodging|hostel|hostels|b&b|motel|motels|accommodation|accommodations)\b/i;
+  const hotelPhrases = /(place to stay|places to stay|somewhere to stay|room to stay|book a room|reserve a room|need a room|need a bed|find a hotel|find a guesthouse|stay in cambridge)/i;
+
+  // 2. Dining / Restaurant Domain (Word boundaries)
+  const restaurantKeywords = /\b(restaurant|restaurants|cafe|cafes|bistro|diner|dining|eatery|eateries|cuisine|lunch|dinner|breakfast|food)\b/i;
+  const restaurantPhrases = /(place to eat|places to eat|somewhere to eat|eat out|grab a bite|book a table|reserve a table|find food|find a restaurant|somewhere for dinner|somewhere for lunch)/i;
+  const cuisineKeywords = /\b(italian|chinese|indian|thai|mexican|british|mediterranean|portuguese)\b/i;
+
+  // 3. Attractions Domain (Word boundaries)
+  const attractionKeywords = /\b(museum|museums|theatre|theatres|theater|theaters|cinema|cinemas|gallery|galleries|park|parks|attraction|attractions|sightseeing|monument|monuments|church|churches|cathedral)\b/i;
+  const attractionPhrases = /(place to visit|places to visit|things to do|what to visit|tourist attraction|tourist spot|tourist spots|sight to see|sights to see|visit in cambridge)/i;
+
+  // 4. Taxi / Transit Domain (Word boundaries)
+  const taxiKeywords = /\b(taxi|taxis|cab|cabs|transit|chauffeur|uber)\b/i;
+  const taxiPhrases = /(book a taxi|call a taxi|need a taxi|get a taxi|book a cab|call a cab|need a cab|get a cab|pick me up|drop me off|drive me to|hire a taxi|need a ride|book a ride|get a ride|give me a ride)/i;
+
+  if (hotelPhrases.test(t) || hotelKeywords.test(t)) return 'hotel';
+  if (restaurantPhrases.test(t) || restaurantKeywords.test(t) || (cuisineKeywords.test(t) && !/\b(language|speak|fluent|learn|translate|grammar)\b/i.test(t))) return 'restaurant';
+  if (attractionPhrases.test(t) || attractionKeywords.test(t)) return 'attraction';
+  if (taxiPhrases.test(t) || taxiKeywords.test(t)) return 'taxi';
+
   return null;
 }
 
@@ -147,7 +154,7 @@ function ChatPage(props) {
 
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: 'Welcome to **AMDDST** (Adaptive Multi-Domain Dialogue State Tracker).\n\nI track conversational belief state across **Accommodations**, **Dining**, **Attractions**, and **Transit**.\n\nEnter your inquiry below to begin.',
+    content: "Hello! Welcome to **AMDDST**.\n\nI am your conversational assistant for Cambridge travel and reservations.\n\nI can help you find **Accommodations**, recommend **Dining**, discover local **Attractions**, or arrange a **Taxi**.\n\nHow can I help you today?",
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   }]);
   const [input, setInput] = useState('');
@@ -269,73 +276,130 @@ function ChatPage(props) {
     setInput('');
     setIsLoading(true);
     setSearchResults(null);
+    setSearchType('');
 
-    // Step 1: Smart local responses
-    const smartResponse = getSmartResponse(text, userName);
-    if (smartResponse) {
+    // 1. Greet the user when they greet
+    if (isGreeting(text)) {
       setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'assistant', content: smartResponse.message, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
+        const greetingReply = `Hello${userName ? `, ${userName}` : ''}! Welcome to **AMDDST**.\n\nI can assist you with:\n• **Accommodations** — Finding hotels and guesthouses in Cambridge\n• **Dining** — Recommending restaurants, cafes, and cuisines\n• **Attractions** — Discovering museums, theatres, and parks\n• **Transit** — Booking taxi rides across Cambridge\n\nHow can I help you today?`;
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: greetingReply,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+        setSearchResults(null);
+        setSearchType('');
         setIsLoading(false);
-      }, 300);
+      }, 250);
       return;
     }
 
-    // Step 2: Detect domain from user text
+    // 2. Explain app capabilities when asked
+    if (isAppInfoQuery(text)) {
+      setTimeout(() => {
+        const infoReply = `I am **AMDDST** (Adaptive Multi-Domain Dialogue State Tracker), dedicated to Cambridge services.\n\nI can assist you with:\n• **Accommodations**: *"Find a cheap hotel in the centre with wifi"*\n• **Dining**: *"Recommend a moderate Italian restaurant"*\n• **Attractions**: *"What museums or theatres are in Cambridge?"*\n• **Transit**: *"Book a taxi to the railway station"*\n\nAsk me about any of these services to get verified recommendations!`;
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: infoReply,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+        setSearchResults(null);
+        setSearchType('');
+        setIsLoading(false);
+      }, 250);
+      return;
+    }
+
+    // 3. Strict Domain Check - Cards and searches ONLY for supported domains
     const userDomain = detectDomainFromText(text);
-    const userSlots = userDomain ? extractSlotsByDomain(text, userDomain) : {};
+    if (!userDomain) {
+      setTimeout(() => {
+        const outOfScopeReply = `I specialize exclusively in **Cambridge travel and local services** across four domains:\n• **Accommodations** (Hotels, guesthouses, B&Bs)\n• **Dining** (Restaurants, cafes, cuisines)\n• **Attractions** (Museums, theatres, parks)\n• **Transit** (Taxi and cab dispatch)\n\nI am unable to answer general questions outside of these services. Please ask about places to stay, dine, visit, or travel in Cambridge!`;
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: outOfScopeReply,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }]);
+        setSearchResults(null);
+        setSearchType('');
+        setIsLoading(false);
+      }, 250);
+      return;
+    }
+
+    // 4. In-Domain Execution ONLY: query model and search database ONLY for userDomain
+    const userSlots = extractSlotsByDomain(text, userDomain);
 
     try {
-      // Step 3: Call AI state tracking model
-      const { botReply, aiSlots } = await predictDialogueState(text, []);
-
-      // Step 4: Domain resolution
-      let finalDomain = userDomain;
-      let finalSlots = userSlots;
-
-      if (!finalDomain && Object.keys(aiSlots).length > 0) {
-        if (Object.keys(aiSlots).some(k => k.startsWith('taxi-'))) { finalDomain = 'taxi'; finalSlots = aiSlots; }
-        else if (Object.keys(aiSlots).some(k => k.startsWith('hotel-'))) { finalDomain = 'hotel'; finalSlots = aiSlots; }
-        else if (Object.keys(aiSlots).some(k => k.startsWith('restaurant-'))) { finalDomain = 'restaurant'; finalSlots = aiSlots; }
-        else if (Object.keys(aiSlots).some(k => k.startsWith('attraction-'))) { finalDomain = 'attraction'; finalSlots = aiSlots; }
+      let aiSlots = {};
+      let botReply = '';
+      try {
+        const prediction = await predictDialogueState(text, []);
+        botReply = prediction.botReply || '';
+        aiSlots = prediction.aiSlots || {};
+      } catch (e) {
+        console.warn('Dialogue state prediction fallback to local extraction:', e);
       }
 
-      // Step 5: Search database
-      let results = [];
-      if (finalDomain === 'hotel') results = searchHotels(finalSlots);
-      else if (finalDomain === 'restaurant') results = searchRestaurants(finalSlots);
-      else if (finalDomain === 'attraction') results = searchAttractions(finalSlots);
-      else if (finalDomain === 'taxi') results = searchTaxis(finalSlots);
+      // Filter aiSlots to ONLY slots belonging to this userDomain
+      const domainPrefix = `${userDomain}-`;
+      const domainAiSlots = {};
+      if (aiSlots && typeof aiSlots === 'object') {
+        Object.keys(aiSlots).forEach(key => {
+          if (key.startsWith(domainPrefix)) {
+            domainAiSlots[key] = aiSlots[key];
+          }
+        });
+      }
 
-      // Step 6: Build response
-      let displayReply = botReply;
-      if (finalDomain && results.length > 0) {
-        displayReply = botReply || `Retrieved ${results.length} verified ${finalDomain}(s) matching your parameters:`;
+      const mergedSlots = { ...userSlots, ...domainAiSlots };
+
+      let results = [];
+      if (userDomain === 'hotel') results = searchHotels(mergedSlots);
+      else if (userDomain === 'restaurant') results = searchRestaurants(mergedSlots);
+      else if (userDomain === 'attraction') results = searchAttractions(mergedSlots);
+      else if (userDomain === 'taxi') results = searchTaxis(mergedSlots);
+
+      let displayReply = '';
+      if (results && results.length > 0) {
+        displayReply = botReply || `Retrieved ${results.length} verified ${userDomain}(s) matching your parameters:`;
         setSearchResults(results);
-        setSearchType(finalDomain);
-      } else if (finalDomain && results.length === 0) {
-        displayReply = `No ${finalDomain} records match the specified search parameters.\n\nRecommended adjustments:\n• Specify a broader area sector (Centre, North, South, East, West)\n• Broaden your budget constraints\n• Remove specific amenity filters`;
+        setSearchType(userDomain);
+      } else {
+        displayReply = `No matching ${userDomain} records found for your specific filters.\n\nRecommended adjustments:\n• Specify a broader area sector (Centre, North, South, East, West)\n• Broaden your budget constraints\n• Remove specific amenity filters`;
         setSearchResults(null);
         setSearchType('');
-      } else if (!finalDomain && (!botReply || botReply.trim() === '')) {
-        displayReply = `I was unable to detect actionable state from your inquiry.\n\nI can process inquiries for:\n• **Accommodations** (Hotels, guesthouses)\n• **Dining** (Cuisine, price tiers)\n• **Attractions** (Museums, theaters, parks)\n• **Transit** (Taxi dispatch)\n\nType **"help"** for detailed usage instructions.`;
-        setSearchResults(null);
-        setSearchType('');
+      }
+
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: displayReply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+      await upsertConversation(text, displayReply);
+    } catch (error) {
+      console.error('sendMessage error:', error);
+      let fallbackResults = [];
+      if (userDomain === 'hotel') fallbackResults = searchHotels(userSlots);
+      else if (userDomain === 'restaurant') fallbackResults = searchRestaurants(userSlots);
+      else if (userDomain === 'attraction') fallbackResults = searchAttractions(userSlots);
+      else if (userDomain === 'taxi') fallbackResults = searchTaxis(userSlots);
+
+      if (fallbackResults && fallbackResults.length > 0) {
+        setSearchResults(fallbackResults);
+        setSearchType(userDomain);
       } else {
         setSearchResults(null);
         setSearchType('');
       }
 
-      setMessages(prev => [...prev, {
-        role: 'assistant', content: displayReply,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }]);
-      await upsertConversation(text, displayReply);
+      const fallbackReply = fallbackResults.length > 0
+        ? `Retrieved ${fallbackResults.length} verified ${userDomain}(s) matching your parameters:`
+        : `No matching ${userDomain} records found for your parameters.`;
 
-    } catch (error) {
-      console.error('sendMessage error:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Unable to communicate with the dialogue state inference endpoint. Please verify network access and try again.',
+        content: fallbackReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
     }
