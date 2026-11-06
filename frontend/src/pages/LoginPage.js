@@ -89,7 +89,8 @@ function LoginPage({ onLogin }) {
     <div
       style={{
         minHeight: '100vh',
-        background: '#090D16',
+        background: '#080A0F',
+        backgroundImage: 'radial-gradient(circle at 50% 20%, #171D2B 0%, #080A0F 85%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -98,31 +99,33 @@ function LoginPage({ onLogin }) {
         overflow: 'hidden',
       }}
     >
-      {/* Subtle ambient glow */}
+      {/* Sidecar Yellow Ambient Glow */}
       <div
         style={{
           position: 'absolute',
-          width: 500,
-          height: 500,
+          width: 550,
+          height: 550,
           borderRadius: '50%',
-          top: '20%',
+          top: '25%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          background: 'radial-gradient(circle, rgba(79, 70, 229, 0.12) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(245, 197, 24, 0.12) 0%, transparent 70%)',
           pointerEvents: 'none',
+          filter: 'blur(40px)',
         }}
       />
 
       <motion.div
         style={{
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: 20,
-          padding: '40px 36px',
+          background: 'rgba(20, 26, 38, 0.65)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          borderRadius: 22,
+          padding: '42px 38px',
           width: '100%',
-          maxWidth: 420,
+          maxWidth: 440,
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)',
           position: 'relative',
           zIndex: 1,
         }}
@@ -132,9 +135,9 @@ function LoginPage({ onLogin }) {
       >
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ display: 'inline-flex', marginBottom: 16 }}>
-            <BrandLogo size={44} showText={false} />
+            <BrandLogo size={46} showText={false} />
           </div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#F8FAFC', marginBottom: 6 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: '#F8FAFC', marginBottom: 6, letterSpacing: '-0.02em' }}>
             {mode === 'login' ? 'Sign in to AMDDST' : 'Create an Account'}
           </h2>
           <p style={{ color: '#94A3B8', fontSize: 13 }}>
@@ -173,7 +176,7 @@ function LoginPage({ onLogin }) {
           disabled={loading}
           style={{
             width: '100%',
-            padding: '11px 16px',
+            padding: '12px 16px',
             border: '1px solid rgba(255, 255, 255, 0.12)',
             borderRadius: 10,
             background: 'rgba(255, 255, 255, 0.05)',
@@ -188,7 +191,7 @@ function LoginPage({ onLogin }) {
             color: '#F8FAFC',
             transition: 'all 0.2s',
           }}
-          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.09)'; }}
+          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
           onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -225,7 +228,7 @@ function LoginPage({ onLogin }) {
         <div
           style={{
             display: 'flex',
-            background: 'rgba(0, 0, 0, 0.25)',
+            background: 'rgba(10, 14, 22, 0.6)',
             borderRadius: 10,
             padding: 4,
             marginBottom: 18,
@@ -239,10 +242,10 @@ function LoginPage({ onLogin }) {
               flex: 1,
               padding: '8px 12px',
               border: 'none',
-              borderRadius: 7,
-              background: activeTab === 'password' ? '#4F46E5' : 'transparent',
-              color: activeTab === 'password' ? '#FFFFFF' : '#94A3B8',
-              fontWeight: 600,
+              borderRadius: 8,
+              background: activeTab === 'password' ? '#F5C518' : 'transparent',
+              color: activeTab === 'password' ? '#0A0D14' : '#94A3B8',
+              fontWeight: 700,
               cursor: 'pointer',
               fontSize: 12,
               display: 'flex',
@@ -261,10 +264,10 @@ function LoginPage({ onLogin }) {
               flex: 1,
               padding: '8px 12px',
               border: 'none',
-              borderRadius: 7,
-              background: activeTab === 'phone' ? '#4F46E5' : 'transparent',
-              color: activeTab === 'phone' ? '#FFFFFF' : '#94A3B8',
-              fontWeight: 600,
+              borderRadius: 8,
+              background: activeTab === 'phone' ? '#F5C518' : 'transparent',
+              color: activeTab === 'phone' ? '#0A0D14' : '#94A3B8',
+              fontWeight: 700,
               cursor: 'pointer',
               fontSize: 12,
               display: 'flex',
@@ -282,7 +285,7 @@ function LoginPage({ onLogin }) {
         <form onSubmit={handleSubmit}>
           {activeTab === 'password' ? (
             <>
-              <div style={{ marginBottom: 12 }}>
+              <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#CBD5E1', marginBottom: 6 }}>
                   Email Address
                 </label>
@@ -306,15 +309,21 @@ function LoginPage({ onLogin }) {
                       fontSize: 13,
                       outline: 'none',
                       color: '#F8FAFC',
-                      transition: 'border-color 0.2s',
+                      transition: 'all 0.2s',
                     }}
-                    onFocus={e => e.target.style.borderColor = '#6366F1'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                    onFocus={e => {
+                      e.target.style.borderColor = '#F5C518';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(245, 197, 24, 0.2)';
+                    }}
+                    onBlur={e => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
               </div>
 
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 22 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#CBD5E1', marginBottom: 6 }}>
                   Password
                 </label>
@@ -338,10 +347,16 @@ function LoginPage({ onLogin }) {
                       fontSize: 13,
                       outline: 'none',
                       color: '#F8FAFC',
-                      transition: 'border-color 0.2s',
+                      transition: 'all 0.2s',
                     }}
-                    onFocus={e => e.target.style.borderColor = '#6366F1'}
-                    onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                    onFocus={e => {
+                      e.target.style.borderColor = '#F5C518';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(245, 197, 24, 0.2)';
+                    }}
+                    onBlur={e => {
+                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      e.target.style.boxShadow = 'none';
+                    }}
                   />
                 </div>
               </div>
@@ -349,16 +364,16 @@ function LoginPage({ onLogin }) {
           ) : (
             <div
               style={{
-                marginBottom: 20,
+                marginBottom: 22,
                 padding: '24px 16px',
                 background: 'rgba(255, 255, 255, 0.03)',
                 borderRadius: 10,
-                border: '1px dashed rgba(255, 255, 255, 0.12)',
+                border: '1px dashed rgba(245, 197, 24, 0.3)',
                 textAlign: 'center',
               }}
             >
-              <LuSmartphone size={24} style={{ color: '#818CF8', marginBottom: 8 }} />
-              <p style={{ color: '#F8FAFC', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+              <LuSmartphone size={24} style={{ color: '#F5C518', marginBottom: 8 }} />
+              <p style={{ color: '#F8FAFC', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
                 SMS OTP Verification
               </p>
               <p style={{ color: '#94A3B8', fontSize: 12, lineHeight: 1.5 }}>
@@ -374,20 +389,22 @@ function LoginPage({ onLogin }) {
               style={{
                 width: '100%',
                 padding: '12px',
-                background: loading ? 'rgba(79, 70, 229, 0.5)' : '#4F46E5',
-                color: '#FFFFFF',
+                background: loading ? 'rgba(245, 197, 24, 0.5)' : '#F5C518',
+                color: '#0A0D14',
                 border: 'none',
                 borderRadius: 10,
                 fontSize: 14,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                boxShadow: '0 2px 10px rgba(79, 70, 229, 0.35)',
-                transition: 'background-color 0.2s',
+                boxShadow: '0 4px 18px rgba(245, 197, 24, 0.35)',
+                transition: 'all 0.2s',
               }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#E5B50F'; }}
+              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = '#F5C518'; }}
             >
               {loading ? (
                 <>
@@ -405,7 +422,7 @@ function LoginPage({ onLogin }) {
           {mode === 'login' ? "Don't have an account? " : 'Already registered? '}
           <span
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-            style={{ color: '#818CF8', fontWeight: 600, cursor: 'pointer' }}
+            style={{ color: '#F5C518', fontWeight: 700, cursor: 'pointer' }}
           >
             {mode === 'login' ? 'Create an account' : 'Sign in'}
           </span>

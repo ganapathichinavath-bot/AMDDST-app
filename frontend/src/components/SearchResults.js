@@ -19,18 +19,18 @@ function SearchResults({ results, type, onSelect }) {
 
   const getDomainMeta = () => {
     if (type === 'hotel') {
-      return { icon: LuBed, label: 'Accommodations', color: '#6366F1' };
+      return { icon: LuBed, label: 'Accommodations', color: '#F5C518', badge: 'Hotel' };
     }
     if (type === 'restaurant') {
-      return { icon: LuUtensils, label: 'Dining', color: '#EC4899' };
+      return { icon: LuUtensils, label: 'Dining Establishments', color: '#F5C518', badge: 'Restaurant' };
     }
     if (type === 'attraction') {
-      return { icon: LuLandmark, label: 'Attractions', color: '#10B981' };
+      return { icon: LuLandmark, label: 'Attractions & Venues', color: '#F5C518', badge: 'Attraction' };
     }
     if (type === 'taxi') {
-      return { icon: LuCar, label: 'Transit Options', color: '#F59E0B' };
+      return { icon: LuCar, label: 'Transit & Dispatches', color: '#F5C518', badge: 'Transit' };
     }
-    return { icon: LuMapPin, label: 'Locations', color: '#6366F1' };
+    return { icon: LuMapPin, label: 'Entities', color: '#F5C518', badge: 'Location' };
   };
 
   const meta = getDomainMeta();
@@ -39,15 +39,15 @@ function SearchResults({ results, type, onSelect }) {
   const getPriceBadge = (price) => {
     const p = (price || '').toLowerCase();
     if (p === 'cheap') {
-      return { text: 'Economy', color: '#34D399', bg: 'rgba(16, 185, 129, 0.14)' };
+      return { text: 'Economy', color: '#34D399', bg: 'rgba(16, 185, 129, 0.14)', border: 'rgba(16, 185, 129, 0.3)' };
     }
     if (p === 'moderate') {
-      return { text: 'Standard', color: '#FBBF24', bg: 'rgba(245, 158, 11, 0.14)' };
+      return { text: 'Standard', color: '#F5C518', bg: 'rgba(245, 197, 24, 0.14)', border: 'rgba(245, 197, 24, 0.3)' };
     }
     if (p === 'expensive') {
-      return { text: 'Premium', color: '#F87171', bg: 'rgba(239, 68, 68, 0.14)' };
+      return { text: 'Premium', color: '#F87171', bg: 'rgba(239, 68, 68, 0.14)', border: 'rgba(239, 68, 68, 0.3)' };
     }
-    return { text: price, color: '#A5B4FC', bg: 'rgba(99, 102, 241, 0.14)' };
+    return { text: price, color: '#F3E5AB', bg: 'rgba(243, 229, 171, 0.14)', border: 'rgba(243, 229, 171, 0.3)' };
   };
 
   return (
@@ -61,16 +61,16 @@ function SearchResults({ results, type, onSelect }) {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 7,
+          gap: 8,
           fontSize: 11,
           fontWeight: 700,
-          color: '#94A3B8',
-          letterSpacing: '0.05em',
+          color: '#F3E5AB',
+          letterSpacing: '0.06em',
           textTransform: 'uppercase',
           marginBottom: 10,
         }}
       >
-        <DomainIcon size={14} color={meta.color} />
+        <DomainIcon size={14} color="#F5C518" />
         <span>
           Retrieved {results.length} verified {meta.label.toLowerCase()}
         </span>
@@ -85,16 +85,20 @@ function SearchResults({ results, type, onSelect }) {
               key={i}
               onClick={() => onSelect && onSelect(item, type)}
               style={{
-                background: 'rgba(15, 23, 42, 0.75)',
-                borderRadius: 12,
-                padding: '14px 16px',
+                background: 'rgba(20, 26, 38, 0.65)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderRadius: 14,
+                padding: '16px 18px',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
               }}
               whileHover={{
-                background: 'rgba(27, 36, 59, 0.85)',
-                borderColor: 'rgba(99, 102, 241, 0.35)',
+                background: 'rgba(28, 36, 52, 0.85)',
+                borderColor: 'rgba(245, 197, 24, 0.45)',
+                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(245, 197, 24, 0.12)',
                 y: -1,
               }}
               whileTap={{ scale: 0.99 }}
@@ -103,16 +107,16 @@ function SearchResults({ results, type, onSelect }) {
                 {/* Domain Emblem */}
                 <div
                   style={{
-                    width: 38,
-                    height: 38,
+                    width: 40,
+                    height: 40,
                     borderRadius: 10,
                     flexShrink: 0,
-                    background: `${meta.color}15`,
-                    border: `1px solid ${meta.color}30`,
+                    background: 'rgba(245, 197, 24, 0.12)',
+                    border: '1px solid rgba(245, 197, 24, 0.28)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: meta.color,
+                    color: '#F5C518',
                   }}
                 >
                   <DomainIcon size={18} />
@@ -141,6 +145,7 @@ function SearchResults({ results, type, onSelect }) {
                             fontWeight: 700,
                             color: priceBadge.color,
                             background: priceBadge.bg,
+                            border: `1px solid ${priceBadge.border}`,
                             padding: '2px 8px',
                             borderRadius: 6,
                             textTransform: 'uppercase',
@@ -152,9 +157,9 @@ function SearchResults({ results, type, onSelect }) {
                       )}
 
                       {item.stars && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 2, color: '#FBBF24' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 2, color: '#F5C518' }}>
                           {Array.from({ length: item.stars }).map((_, s) => (
-                            <LuStar key={s} size={11} fill="#FBBF24" />
+                            <LuStar key={s} size={11} fill="#F5C518" />
                           ))}
                         </div>
                       )}
@@ -162,16 +167,17 @@ function SearchResults({ results, type, onSelect }) {
 
                     <div
                       style={{
-                        padding: '4px 10px',
-                        background: 'rgba(79, 70, 229, 0.15)',
-                        border: '1px solid rgba(79, 70, 229, 0.3)',
-                        borderRadius: 6,
-                        color: '#A5B4FC',
+                        padding: '5px 12px',
+                        background: 'rgba(245, 197, 24, 0.12)',
+                        border: '1px solid rgba(245, 197, 24, 0.35)',
+                        borderRadius: 8,
+                        color: '#F5C518',
                         fontSize: 11,
-                        fontWeight: 600,
+                        fontWeight: 700,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 4,
+                        gap: 5,
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       <span>Select</span>
@@ -188,7 +194,7 @@ function SearchResults({ results, type, onSelect }) {
                         gap: 5,
                         fontSize: 12,
                         color: '#94A3B8',
-                        marginTop: 4,
+                        marginTop: 5,
                       }}
                     >
                       <LuMapPin size={13} style={{ flexShrink: 0, color: '#64748B' }} />
@@ -201,20 +207,20 @@ function SearchResults({ results, type, onSelect }) {
                   {/* Meta Amenities */}
                   <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     {item.area && (
-                      <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
-                        Area: <strong>{item.area}</strong>
+                      <span style={{ fontSize: 11, color: '#CBD5E1', textTransform: 'capitalize' }}>
+                        Area: <strong style={{ color: '#F8FAFC' }}>{item.area}</strong>
                       </span>
                     )}
 
                     {item.food && (
-                      <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
-                        Cuisine: <strong>{item.food}</strong>
+                      <span style={{ fontSize: 11, color: '#CBD5E1', textTransform: 'capitalize' }}>
+                        Cuisine: <strong style={{ color: '#F8FAFC' }}>{item.food}</strong>
                       </span>
                     )}
 
                     {item.type && type === 'attraction' && (
-                      <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'capitalize' }}>
-                        Category: <strong>{item.type}</strong>
+                      <span style={{ fontSize: 11, color: '#CBD5E1', textTransform: 'capitalize' }}>
+                        Category: <strong style={{ color: '#F8FAFC' }}>{item.type}</strong>
                       </span>
                     )}
 
@@ -225,19 +231,19 @@ function SearchResults({ results, type, onSelect }) {
                     )}
 
                     {item.internet === 'yes' && (
-                      <span style={{ fontSize: 11, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <LuWifi size={13} /> High-Speed WiFi
+                      <span style={{ fontSize: 11, color: '#F3E5AB', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <LuWifi size={13} /> Complimentary WiFi
                       </span>
                     )}
 
                     {item.fee && (
-                      <span style={{ fontSize: 11, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <span style={{ fontSize: 11, color: '#CBD5E1', display: 'flex', alignItems: 'center', gap: 3 }}>
                         <LuTag size={12} /> Admission: {item.fee}
                       </span>
                     )}
 
                     {type === 'taxi' && (
-                      <span style={{ fontSize: 11, color: '#FBBF24' }}>
+                      <span style={{ fontSize: 11, color: '#F5C518' }}>
                         Dispatch: 24/7 On-Demand
                       </span>
                     )}
@@ -251,11 +257,12 @@ function SearchResults({ results, type, onSelect }) {
                         alignItems: 'center',
                         gap: 5,
                         fontSize: 11,
-                        color: '#38BDF8',
-                        marginTop: 6,
+                        color: '#F3E5AB',
+                        marginTop: 7,
+                        fontFamily: 'var(--font-mono, monospace)',
                       }}
                     >
-                      <LuPhone size={12} />
+                      <LuPhone size={12} color="#F5C518" />
                       <span>{item.phone}</span>
                     </div>
                   )}

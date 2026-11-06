@@ -292,7 +292,7 @@ function ChatPage(props) {
       // Step 3: Call AI state tracking model (via backend with fallback)
       const { botReply, aiSlots } = await predictDialogueState(text, []);
 
-      // Step 5: Domain resolution
+      // Step 4: Domain resolution
       let finalDomain = userDomain;
       let finalSlots = userSlots;
 
@@ -303,14 +303,14 @@ function ChatPage(props) {
         else if (Object.keys(aiSlots).some(k => k.startsWith('attraction-'))) { finalDomain = 'attraction'; finalSlots = aiSlots; }
       }
 
-      // Step 6: Search database
+      // Step 5: Search database
       let results = [];
       if (finalDomain === 'hotel') results = searchHotels(finalSlots);
       else if (finalDomain === 'restaurant') results = searchRestaurants(finalSlots);
       else if (finalDomain === 'attraction') results = searchAttractions(finalSlots);
       else if (finalDomain === 'taxi') results = searchTaxis(finalSlots);
 
-      // Step 7: Build response
+      // Step 6: Build response
       let displayReply = botReply;
       if (finalDomain && results.length > 0) {
         displayReply = botReply || `Retrieved ${results.length} verified ${finalDomain}(s) matching your parameters:`;
@@ -347,9 +347,37 @@ function ChatPage(props) {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#090D16', color: '#F8FAFC', overflow: 'hidden', position: 'relative' }}>
+    <div style={{ display: 'flex', height: '100vh', background: '#080A0F', color: '#F8FAFC', overflow: 'hidden', position: 'relative' }}>
 
-      {/* Logout confirmation modal */}
+      {/* Sidecar Yellow Ambient Orbs */}
+      <div
+        style={{
+          position: 'absolute',
+          top: -80,
+          left: '30%',
+          width: 500,
+          height: 500,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(245, 197, 24, 0.1) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: -100,
+          right: '20%',
+          width: 600,
+          height: 600,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(243, 229, 171, 0.08) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Logout Glass Modal */}
       <AnimatePresence>
         {showLogoutModal && (
           <motion.div
@@ -357,7 +385,8 @@ function ChatPage(props) {
               position: 'fixed',
               inset: 0,
               background: 'rgba(0,0,0,0.75)',
-              backdropFilter: 'blur(8px)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
               zIndex: 300,
               display: 'flex',
               alignItems: 'center',
@@ -370,19 +399,21 @@ function ChatPage(props) {
           >
             <motion.div
               style={{
-                background: '#0F172A',
-                borderRadius: 16,
+                background: 'rgba(16, 20, 30, 0.85)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                borderRadius: 20,
                 padding: '28px',
                 width: '100%',
                 maxWidth: 360,
-                border: '1px solid rgba(255,255,255,0.12)',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                border: '1px solid rgba(245, 197, 24, 0.3)',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
               }}
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
             >
-              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#F8FAFC', marginBottom: 8 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 700, color: '#FFFFFF', marginBottom: 8 }}>
                 Sign out of session?
               </h3>
               <p style={{ color: '#94A3B8', fontSize: 13, lineHeight: 1.5, marginBottom: 22 }}>
@@ -395,7 +426,7 @@ function ChatPage(props) {
                     flex: 1,
                     padding: '10px',
                     background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 8,
                     color: '#CBD5E1',
                     fontSize: 13,
@@ -435,7 +466,8 @@ function ChatPage(props) {
               position: 'fixed',
               inset: 0,
               background: 'rgba(0,0,0,0.75)',
-              backdropFilter: 'blur(8px)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
               zIndex: 300,
               display: 'flex',
               alignItems: 'center',
@@ -448,19 +480,21 @@ function ChatPage(props) {
           >
             <motion.div
               style={{
-                background: '#0F172A',
-                borderRadius: 16,
+                background: 'rgba(16, 20, 30, 0.85)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                borderRadius: 18,
                 padding: '26px',
                 width: '100%',
                 maxWidth: 340,
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
               }}
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
             >
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#F8FAFC', marginBottom: 8 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#FFFFFF', marginBottom: 8 }}>
                 Delete conversation?
               </h3>
               <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 20 }}>
@@ -473,7 +507,7 @@ function ChatPage(props) {
                     flex: 1,
                     padding: '9px',
                     background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: 8,
                     color: '#CBD5E1',
                     fontSize: 13,
@@ -509,7 +543,7 @@ function ChatPage(props) {
       <AnimatePresence>
         {sidebarOpen && isMobile && (
           <motion.div
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 100 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 100 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -518,13 +552,15 @@ function ChatPage(props) {
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Frosted Glass Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.aside
             style={{
               width: 290,
-              background: '#0B101B',
+              background: 'rgba(12, 16, 25, 0.75)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
               borderRight: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'flex',
               flexDirection: 'column',
@@ -532,7 +568,7 @@ function ChatPage(props) {
               top: 0,
               left: 0,
               height: '100vh',
-              zIndex: isMobile ? 110 : 'auto',
+              zIndex: isMobile ? 110 : 2,
             }}
             initial={{ x: -290 }}
             animate={{ x: 0 }}
@@ -580,21 +616,28 @@ function ChatPage(props) {
                 style={{
                   width: '100%',
                   padding: '10px 14px',
-                  background: '#1E293B',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(245, 197, 24, 0.12)',
+                  border: '1px solid rgba(245, 197, 24, 0.35)',
                   borderRadius: 10,
-                  color: '#F8FAFC',
-                  fontWeight: 600,
+                  color: '#FDE047',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   fontSize: 13,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  transition: 'background-color 0.2s',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 2px 10px rgba(245, 197, 24, 0.15)',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#283548'}
-                onMouseLeave={(e) => e.currentTarget.style.background = '#1E293B'}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(245, 197, 24, 0.22)';
+                  e.currentTarget.style.boxShadow = '0 0 16px rgba(245, 197, 24, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(245, 197, 24, 0.12)';
+                  e.currentTarget.style.boxShadow = '0 2px 10px rgba(245, 197, 24, 0.15)';
+                }}
               >
                 <LuPlus size={16} /> New Dialogue Session
               </button>
@@ -606,7 +649,7 @@ function ChatPage(props) {
                 style={{
                   fontSize: 10,
                   fontWeight: 700,
-                  color: '#64748B',
+                  color: '#F3E5AB',
                   letterSpacing: '0.08em',
                   marginBottom: 10,
                   textTransform: 'uppercase',
@@ -629,17 +672,17 @@ function ChatPage(props) {
                     <div
                       style={{
                         padding: '9px 34px 9px 10px',
-                        borderRadius: 8,
+                        borderRadius: 10,
                         cursor: 'pointer',
-                        background: currentSessionDocId.current === conv.id ? 'rgba(79, 70, 229, 0.15)' : 'transparent',
-                        border: currentSessionDocId.current === conv.id ? '1px solid rgba(99, 102, 241, 0.35)' : '1px solid transparent',
+                        background: currentSessionDocId.current === conv.id ? 'rgba(245, 197, 24, 0.16)' : 'transparent',
+                        border: currentSessionDocId.current === conv.id ? '1px solid rgba(245, 197, 24, 0.45)' : '1px solid transparent',
                         display: 'flex',
                         gap: 8,
                         alignItems: 'center',
                         transition: 'background 0.15s',
                       }}
                       onMouseEnter={(e) => {
-                        if (currentSessionDocId.current !== conv.id) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                        if (currentSessionDocId.current !== conv.id) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                       }}
                       onMouseLeave={(e) => {
                         if (currentSessionDocId.current !== conv.id) e.currentTarget.style.background = 'transparent';
@@ -649,7 +692,7 @@ function ChatPage(props) {
                       <LuMessageSquare
                         size={14}
                         style={{
-                          color: currentSessionDocId.current === conv.id ? '#818CF8' : '#64748B',
+                          color: currentSessionDocId.current === conv.id ? '#F5C518' : '#94A3B8',
                           flexShrink: 0
                         }}
                       />
@@ -670,7 +713,8 @@ function ChatPage(props) {
                         <p
                           style={{
                             fontSize: 11,
-                            color: '#64748B',
+                            color: '#F3E5AB',
+                            opacity: 0.7,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -688,8 +732,8 @@ function ChatPage(props) {
                         right: 6,
                         top: '50%',
                         transform: 'translateY(-50%)',
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        background: 'rgba(239, 68, 68, 0.18)',
+                        border: '1px solid rgba(239, 68, 68, 0.35)',
                         borderRadius: 6,
                         width: 24,
                         height: 24,
@@ -707,13 +751,13 @@ function ChatPage(props) {
                   </div>
                 ))
               ) : (
-                <p style={{ fontSize: 12, color: '#64748B', padding: '12px 6px' }}>
+                <p style={{ fontSize: 12, color: '#94A3B8', padding: '12px 6px' }}>
                   No prior sessions recorded.
                 </p>
               )}
             </div>
 
-            {/* Sidebar User Footer */}
+            {/* Sidebar User Footer in Frosted Glass */}
             <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               {props.isGuest ? (
                 <button
@@ -721,13 +765,14 @@ function ChatPage(props) {
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: '#4F46E5',
-                    color: '#FFFFFF',
+                    background: 'linear-gradient(135deg, #FDE047, #F5C518)',
+                    color: '#0A0D14',
                     border: 'none',
-                    borderRadius: 8,
-                    fontWeight: 600,
+                    borderRadius: 10,
+                    fontWeight: 700,
                     cursor: 'pointer',
                     fontSize: 13,
+                    boxShadow: '0 2px 12px rgba(245, 197, 24, 0.3)',
                   }}
                 >
                   Sign in to Save Sessions
@@ -738,13 +783,13 @@ function ChatPage(props) {
                     style={{
                       width: 34,
                       height: 34,
-                      borderRadius: 8,
-                      background: '#4F46E5',
+                      borderRadius: 10,
+                      background: 'linear-gradient(135deg, #FDE047, #F5C518)',
+                      color: '#0A0D14',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: '#FFFFFF',
-                      fontWeight: 700,
+                      fontWeight: 800,
                       fontSize: 14,
                       flexShrink: 0,
                     }}
@@ -757,7 +802,7 @@ function ChatPage(props) {
                       style={{
                         fontSize: 13,
                         fontWeight: 600,
-                        color: '#F8FAFC',
+                        color: '#FFFFFF',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -768,7 +813,7 @@ function ChatPage(props) {
                     </p>
                     <p
                       onClick={() => { navigate('/bookings'); if (isMobile) setSidebarOpen(false); }}
-                      style={{ fontSize: 11, color: '#818CF8', cursor: 'pointer' }}
+                      style={{ fontSize: 11, color: '#F5C518', cursor: 'pointer', fontWeight: 600 }}
                     >
                       View Reservations
                     </p>
@@ -778,7 +823,7 @@ function ChatPage(props) {
                     title="Sign Out"
                     style={{
                       background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
                       borderRadius: 8,
                       padding: '7px',
                       color: '#94A3B8',
@@ -798,14 +843,15 @@ function ChatPage(props) {
       </AnimatePresence>
 
       {/* Main Console Workspace */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', position: 'relative', zIndex: 1 }}>
 
-        {/* Console Header Bar */}
+        {/* Frosted Glass Header Bar */}
         <header
           style={{
-            padding: '12px 18px',
-            background: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(20px)',
+            padding: '12px 20px',
+            background: 'rgba(12, 16, 25, 0.65)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
@@ -821,8 +867,8 @@ function ChatPage(props) {
               height: 34,
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#CBD5E1',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#F3E5AB',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -841,8 +887,8 @@ function ChatPage(props) {
               height: 34,
               borderRadius: 8,
               background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#CBD5E1',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#F3E5AB',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -855,12 +901,21 @@ function ChatPage(props) {
 
           <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
             <div>
-              <p style={{ fontWeight: 700, color: '#F8FAFC', fontSize: 13, letterSpacing: '-0.01em' }}>
+              <p style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 13, letterSpacing: '-0.01em' }}>
                 AMDDST Tracking Console
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-                <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: '#F5C518',
+                    display: 'inline-block',
+                    boxShadow: '0 0 8px rgba(245, 197, 24, 0.9)',
+                  }}
+                />
+                <span style={{ fontSize: 11, color: '#F3E5AB' }}>
                   Model Ready · Cambridge MultiWOZ Knowledge Base
                 </span>
               </div>
@@ -876,12 +931,12 @@ function ChatPage(props) {
                 height: 34,
                 borderRadius: 8,
                 background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#CBD5E1',
+                color: '#F3E5AB',
               }}
             >
               <LuBookmark size={15} />
@@ -896,12 +951,12 @@ function ChatPage(props) {
                   height: 34,
                   borderRadius: 8,
                   background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#CBD5E1',
+                  color: '#F3E5AB',
                 }}
               >
                 <LuUser size={15} />
@@ -917,13 +972,13 @@ function ChatPage(props) {
                 }}
                 style={{
                   padding: '6px 12px',
-                  background: '#1E293B',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(245, 197, 24, 0.12)',
+                  border: '1px solid rgba(245, 197, 24, 0.35)',
                   borderRadius: 8,
                   fontSize: 12,
                   fontWeight: 600,
                   cursor: 'pointer',
-                  color: '#CBD5E1',
+                  color: '#FDE047',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
@@ -944,10 +999,11 @@ function ChatPage(props) {
               {props.isGuest && (
                 <div
                   style={{
-                    background: 'rgba(30, 41, 59, 0.5)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 12,
-                    padding: '12px 16px',
+                    background: 'rgba(25, 32, 48, 0.6)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(245, 197, 24, 0.25)',
+                    borderRadius: 14,
+                    padding: '12px 18px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -955,19 +1011,19 @@ function ChatPage(props) {
                     flexWrap: 'wrap',
                   }}
                 >
-                  <p style={{ color: '#94A3B8', fontSize: 13, margin: 0 }}>
-                    You are operating in guest mode. Sign in to sync conversations and track confirmed bookings.
+                  <p style={{ color: '#F3E5AB', fontSize: 13, margin: 0 }}>
+                    Operating in guest mode. Sign in to save your sessions and manage active reservations.
                   </p>
                   <button
                     onClick={() => navigate('/login')}
                     style={{
-                      padding: '7px 16px',
-                      background: '#4F46E5',
-                      color: '#FFFFFF',
+                      padding: '7px 18px',
+                      background: 'linear-gradient(135deg, #FDE047, #F5C518)',
+                      color: '#0A0D14',
                       border: 'none',
                       borderRadius: 8,
                       fontSize: 12,
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: 'pointer',
                     }}
                   >
@@ -1001,13 +1057,21 @@ function ChatPage(props) {
                           style={{
                             padding: '14px 18px',
                             borderRadius: msg.role === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                            background: msg.role === 'user' ? '#4F46E5' : 'rgba(19, 27, 46, 0.75)',
-                            color: '#F8FAFC',
+                            background: msg.role === 'user'
+                              ? 'linear-gradient(135deg, #FDE047 0%, #F5C518 100%)'
+                              : 'rgba(20, 26, 38, 0.65)',
+                            color: msg.role === 'user' ? '#0A0D14' : '#FFFFFF',
+                            fontWeight: msg.role === 'user' ? 600 : 400,
                             fontSize: 14,
                             lineHeight: 1.6,
-                            backdropFilter: msg.role === 'assistant' ? 'blur(16px)' : 'none',
-                            border: msg.role === 'assistant' ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(99, 102, 241, 0.4)',
-                            boxShadow: msg.role === 'user' ? '0 4px 14px rgba(79, 70, 229, 0.3)' : '0 4px 14px rgba(0, 0, 0, 0.3)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: msg.role === 'user'
+                              ? '1px solid rgba(245, 197, 24, 0.5)'
+                              : '1px solid rgba(255, 255, 255, 0.1)',
+                            boxShadow: msg.role === 'user'
+                              ? '0 4px 18px rgba(245, 197, 24, 0.35)'
+                              : '0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.12)',
                           }}
                         >
                           <span
@@ -1030,19 +1094,20 @@ function ChatPage(props) {
                                 }}
                                 style={{
                                   padding: '7px 14px',
-                                  background: ai === 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(79, 70, 229, 0.15)',
-                                  border: `1px solid ${ai === 0 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(79, 70, 229, 0.35)'}`,
+                                  background: ai === 0 ? 'rgba(245, 197, 24, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                                  border: `1px solid ${ai === 0 ? 'rgba(245, 197, 24, 0.45)' : 'rgba(255, 255, 255, 0.15)'}`,
                                   borderRadius: 8,
                                   fontSize: 12,
-                                  color: ai === 0 ? '#34D399' : '#A5B4FC',
+                                  color: ai === 0 ? '#FDE047' : '#F8FAFC',
                                   cursor: 'pointer',
                                   fontWeight: 600,
                                   display: 'flex',
                                   alignItems: 'center',
                                   gap: 6,
+                                  backdropFilter: 'blur(10px)',
                                 }}
                               >
-                                {ai === 0 ? <LuCheck size={14} /> : <LuRefreshCw size={13} />}
+                                {ai === 0 ? <LuCheck size={14} color="#F5C518" /> : <LuRefreshCw size={13} />}
                                 <span>{action.label}</span>
                               </button>
                             ))}
@@ -1052,7 +1117,8 @@ function ChatPage(props) {
                         <p
                           style={{
                             fontSize: 11,
-                            color: '#64748B',
+                            color: '#F3E5AB',
+                            opacity: 0.6,
                             marginTop: 5,
                             textAlign: msg.role === 'user' ? 'right' : 'left',
                           }}
@@ -1067,16 +1133,16 @@ function ChatPage(props) {
                             width: 32,
                             height: 32,
                             borderRadius: 8,
-                            background: '#1E293B',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'linear-gradient(135deg, #FDE047, #F5C518)',
+                            color: '#0A0D14',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#F8FAFC',
-                            fontWeight: 700,
+                            fontWeight: 800,
                             fontSize: 13,
                             flexShrink: 0,
                             marginTop: 2,
+                            boxShadow: '0 2px 10px rgba(245, 197, 24, 0.3)',
                           }}
                         >
                           {userInitial}
@@ -1098,19 +1164,20 @@ function ChatPage(props) {
                   <BrandLogo size={32} showText={false} />
                   <div
                     style={{
-                      background: 'rgba(19, 27, 46, 0.75)',
+                      background: 'rgba(20, 26, 38, 0.65)',
                       borderRadius: '14px 14px 14px 4px',
                       padding: '12px 18px',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(245, 197, 24, 0.25)',
+                      backdropFilter: 'blur(20px)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
                       fontSize: 13,
-                      color: '#94A3B8',
+                      color: '#F3E5AB',
                     }}
                   >
                     <motion.div
-                      style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366F1' }}
+                      style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5C518' }}
                       animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
                       transition={{ duration: 1, repeat: Infinity }}
                     />
@@ -1123,12 +1190,13 @@ function ChatPage(props) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Console Bar */}
+        {/* Frosted Glass Input Console Bar */}
         <div
           style={{
             padding: '14px 20px',
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(20px)',
+            background: 'rgba(12, 16, 25, 0.7)',
+            backdropFilter: 'blur(28px)',
+            WebkitBackdropFilter: 'blur(28px)',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
           }}
         >
@@ -1147,11 +1215,12 @@ function ChatPage(props) {
                   onClick={() => sendMessage(s.query)}
                   style={{
                     padding: '6px 12px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    background: 'rgba(25, 32, 46, 0.6)',
+                    backdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
                     borderRadius: 8,
                     fontSize: 12,
-                    color: '#CBD5E1',
+                    color: '#F8FAFC',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     fontWeight: 500,
@@ -1161,17 +1230,17 @@ function ChatPage(props) {
                     transition: 'all 0.15s',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(79, 70, 229, 0.15)';
-                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.35)';
-                    e.currentTarget.style.color = '#FFFFFF';
+                    e.currentTarget.style.background = 'rgba(245, 197, 24, 0.16)';
+                    e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.45)';
+                    e.currentTarget.style.color = '#FEF08A';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.09)';
-                    e.currentTarget.style.color = '#CBD5E1';
+                    e.currentTarget.style.background = 'rgba(25, 32, 46, 0.6)';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.color = '#F8FAFC';
                   }}
                 >
-                  <Icon size={13} color="#818CF8" />
+                  <Icon size={13} color="#F5C518" />
                   <span>{s.label}</span>
                 </button>
               );
@@ -1184,8 +1253,9 @@ function ChatPage(props) {
               display: 'flex',
               gap: 8,
               alignItems: 'center',
-              background: '#0B101B',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              background: 'rgba(15, 20, 30, 0.75)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: 12,
               padding: '6px 10px',
               transition: 'border-color 0.2s',
@@ -1216,7 +1286,7 @@ function ChatPage(props) {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#94A3B8',
+                  color: '#F3E5AB',
                 }}
               >
                 <LuPaperclip size={17} />
@@ -1247,13 +1317,13 @@ function ChatPage(props) {
                   width: 34,
                   height: 34,
                   borderRadius: 8,
-                  background: isRecording ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                  background: isRecording ? 'rgba(245, 197, 24, 0.25)' : 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: isRecording ? '#EF4444' : '#94A3B8',
+                  color: isRecording ? '#F5C518' : '#F3E5AB',
                 }}
               >
                 {isRecording ? <LuMicOff size={17} /> : <LuMic size={17} />}
@@ -1273,7 +1343,7 @@ function ChatPage(props) {
                 background: 'transparent',
                 border: 'none',
                 outline: 'none',
-                color: '#F8FAFC',
+                color: '#FFFFFF',
                 fontSize: 14,
                 padding: '6px 8px',
                 minWidth: 0,
@@ -1289,7 +1359,7 @@ function ChatPage(props) {
                   type="button"
                   onClick={() => sendMessage('I need a hotel')}
                   title="Accommodations"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}
+                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
                 >
                   <LuBed size={16} />
                 </button>
@@ -1297,7 +1367,7 @@ function ChatPage(props) {
                   type="button"
                   onClick={() => sendMessage('Find me a restaurant')}
                   title="Dining"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}
+                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
                 >
                   <LuUtensils size={16} />
                 </button>
@@ -1305,7 +1375,7 @@ function ChatPage(props) {
                   type="button"
                   onClick={() => sendMessage('What attractions are nearby')}
                   title="Attractions"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}
+                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
                 >
                   <LuLandmark size={16} />
                 </button>
@@ -1313,7 +1383,7 @@ function ChatPage(props) {
                   type="button"
                   onClick={() => sendMessage('I need a taxi')}
                   title="Transit"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}
+                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
                 >
                   <LuCar size={16} />
                 </button>
@@ -1330,13 +1400,14 @@ function ChatPage(props) {
                 height: 34,
                 borderRadius: 8,
                 border: 'none',
-                background: input.trim() ? '#4F46E5' : 'rgba(255, 255, 255, 0.05)',
+                background: input.trim() ? 'linear-gradient(135deg, #FDE047, #F5C518)' : 'rgba(255, 255, 255, 0.05)',
                 cursor: input.trim() ? 'pointer' : 'default',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                color: input.trim() ? '#FFFFFF' : '#64748B',
+                color: input.trim() ? '#0A0D14' : '#64748B',
+                boxShadow: input.trim() ? '0 2px 10px rgba(245, 197, 24, 0.35)' : 'none',
                 transition: 'all 0.2s',
               }}
             >

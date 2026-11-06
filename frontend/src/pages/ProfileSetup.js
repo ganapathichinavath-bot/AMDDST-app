@@ -55,7 +55,8 @@ function ProfileSetup({ user, onComplete }) {
     <div
       style={{
         minHeight: '100vh',
-        background: 'radial-gradient(circle at 50% 30%, #111827 0%, #090D16 80%)',
+        background: '#080A0F',
+        backgroundImage: 'radial-gradient(circle at 50% 20%, #151A24 0%, #080A0F 85%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -64,16 +65,33 @@ function ProfileSetup({ user, onComplete }) {
         overflow: 'hidden',
       }}
     >
+      {/* Sidecar Yellow Ambient Glow */}
+      <div
+        style={{
+          position: 'absolute',
+          width: 500,
+          height: 500,
+          borderRadius: '50%',
+          top: '25%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'radial-gradient(circle, rgba(245, 197, 24, 0.12) 0%, transparent 70%)',
+          pointerEvents: 'none',
+          filter: 'blur(40px)',
+        }}
+      />
+
       <motion.div
         style={{
-          background: 'rgba(15, 23, 42, 0.8)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: 20,
-          padding: '40px 36px',
+          background: 'rgba(20, 26, 38, 0.7)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          borderRadius: 22,
+          padding: '42px 38px',
           width: '100%',
           maxWidth: 440,
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
           position: 'relative',
           zIndex: 1,
         }}
@@ -83,9 +101,9 @@ function ProfileSetup({ user, onComplete }) {
       >
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ display: 'inline-flex', marginBottom: 16 }}>
-            <BrandLogo size={44} showText={false} />
+            <BrandLogo size={46} showText={false} />
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#F8FAFC', marginBottom: 6 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#F8FAFC', marginBottom: 6 }}>
             Complete Account Profile
           </h2>
           <p style={{ color: '#94A3B8', fontSize: 13 }}>
@@ -102,7 +120,8 @@ function ProfileSetup({ user, onComplete }) {
                 height: 3,
                 flex: 1,
                 borderRadius: 999,
-                background: step === 1 ? '#4F46E5' : 'rgba(255, 255, 255, 0.12)',
+                background: step === 1 ? '#F5C518' : 'rgba(255, 255, 255, 0.12)',
+                boxShadow: step === 1 ? '0 0 10px rgba(245, 197, 24, 0.5)' : 'none',
               }}
             />
           ))}
@@ -127,16 +146,23 @@ function ProfileSetup({ user, onComplete }) {
                 required
                 style={{
                   width: '100%',
-                  padding: '10px 14px 10px 40px',
+                  padding: '11px 14px 11px 40px',
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 13,
                   outline: 'none',
                   color: '#F8FAFC',
+                  transition: 'all 0.2s',
                 }}
-                onFocus={e => e.target.style.borderColor = '#6366F1'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                onFocus={e => {
+                  e.target.style.borderColor = '#F5C518';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(245, 197, 24, 0.2)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>
@@ -153,21 +179,28 @@ function ProfileSetup({ user, onComplete }) {
               />
               <input
                 type="text"
-                placeholder="Preferred name"
+                placeholder="Preferred handle"
                 value={form.nickname}
                 onChange={e => setForm({ ...form, nickname: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: '10px 14px 10px 40px',
+                  padding: '11px 14px 11px 40px',
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 13,
                   outline: 'none',
                   color: '#F8FAFC',
+                  transition: 'all 0.2s',
                 }}
-                onFocus={e => e.target.style.borderColor = '#6366F1'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                onFocus={e => {
+                  e.target.style.borderColor = '#F5C518';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(245, 197, 24, 0.2)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>
@@ -189,16 +222,23 @@ function ProfileSetup({ user, onComplete }) {
                 onChange={e => setForm({ ...form, phone: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: '10px 14px 10px 40px',
+                  padding: '11px 14px 11px 40px',
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 13,
                   outline: 'none',
                   color: '#F8FAFC',
+                  transition: 'all 0.2s',
                 }}
-                onFocus={e => e.target.style.borderColor = '#6366F1'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                onFocus={e => {
+                  e.target.style.borderColor = '#F5C518';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(245, 197, 24, 0.2)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>
@@ -220,16 +260,23 @@ function ProfileSetup({ user, onComplete }) {
                 onChange={e => setForm({ ...form, city: e.target.value })}
                 style={{
                   width: '100%',
-                  padding: '10px 14px 10px 40px',
+                  padding: '11px 14px 11px 40px',
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 13,
                   outline: 'none',
                   color: '#F8FAFC',
+                  transition: 'all 0.2s',
                 }}
-                onFocus={e => e.target.style.borderColor = '#6366F1'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
+                onFocus={e => {
+                  e.target.style.borderColor = '#F5C518';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(245, 197, 24, 0.2)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
           </div>
@@ -240,20 +287,23 @@ function ProfileSetup({ user, onComplete }) {
             style={{
               width: '100%',
               padding: '12px',
-              background: loading ? 'rgba(79, 70, 229, 0.5)' : '#4F46E5',
-              color: '#FFFFFF',
+              background: loading ? 'rgba(245, 197, 24, 0.5)' : '#F5C518',
+              color: '#0A0D14',
               border: 'none',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
+              borderRadius: 10,
+              fontSize: 14,
+              fontWeight: 700,
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              boxShadow: '0 2px 10px rgba(79, 70, 229, 0.35)',
-              marginBottom: 10,
+              boxShadow: '0 4px 18px rgba(245, 197, 24, 0.35)',
+              marginBottom: 12,
+              transition: 'all 0.15s ease',
             }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#E5B50F'; }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#F5C518'; }}
           >
             {loading ? (
               <>
@@ -272,12 +322,15 @@ function ProfileSetup({ user, onComplete }) {
               width: '100%',
               padding: '10px',
               background: 'transparent',
-              color: '#64748B',
+              color: '#94A3B8',
               border: 'none',
               fontSize: 12,
               cursor: 'pointer',
-              fontWeight: 500,
+              fontWeight: 600,
+              transition: 'color 0.15s ease',
             }}
+            onMouseEnter={e => e.currentTarget.style.color = '#F5C518'}
+            onMouseLeave={e => e.currentTarget.style.color = '#94A3B8'}
           >
             Skip for now →
           </button>

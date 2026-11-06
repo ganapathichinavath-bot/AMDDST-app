@@ -110,14 +110,21 @@ function ProfilePage(props) {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#090D16', color: '#F8FAFC' }}>
-
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#080A0F',
+        backgroundImage: 'radial-gradient(circle at 50% 0%, #151A24 0%, #080A0F 85%)',
+        color: '#F8FAFC',
+      }}
+    >
       {/* Header Bar */}
       <header
         style={{
           padding: '16px 36px',
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(20px)',
+          background: 'rgba(12, 16, 24, 0.65)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
@@ -140,7 +147,10 @@ function ProfilePage(props) {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#CBD5E1',
+            transition: 'all 0.15s ease',
           }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
         >
           <LuArrowLeft size={16} />
         </button>
@@ -151,8 +161,9 @@ function ProfilePage(props) {
               width: 34,
               height: 34,
               borderRadius: 8,
-              background: 'rgba(79, 70, 229, 0.15)',
-              color: '#818CF8',
+              background: 'rgba(245, 197, 24, 0.14)',
+              border: '1px solid rgba(245, 197, 24, 0.3)',
+              color: '#F5C518',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -170,17 +181,26 @@ function ProfilePage(props) {
             onClick={() => setEditing(true)}
             style={{
               marginLeft: 'auto',
-              padding: '7px 16px',
-              background: 'rgba(79, 70, 229, 0.15)',
-              border: '1px solid rgba(99, 102, 241, 0.35)',
+              padding: '8px 16px',
+              background: 'rgba(245, 197, 24, 0.12)',
+              border: '1px solid rgba(245, 197, 24, 0.35)',
               borderRadius: 8,
-              color: '#A5B4FC',
+              color: '#F5C518',
               fontSize: 12,
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#F5C518';
+              e.currentTarget.style.color = '#0A0D14';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(245, 197, 24, 0.12)';
+              e.currentTarget.style.color = '#F5C518';
             }}
           >
             <LuPencil size={13} /> Edit Profile
@@ -188,7 +208,7 @@ function ProfilePage(props) {
         )}
       </header>
 
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '36px 24px' }}>
+      <div style={{ maxWidth: 620, margin: '0 auto', padding: '36px 24px' }}>
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[1, 2, 3, 4].map(i => (
@@ -197,7 +217,8 @@ function ProfilePage(props) {
                 style={{
                   height: 64,
                   borderRadius: 12,
-                  background: 'rgba(15, 23, 42, 0.65)',
+                  background: 'rgba(20, 26, 38, 0.55)',
+                  backdropFilter: 'blur(20px)',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                 }}
               />
@@ -208,40 +229,43 @@ function ProfilePage(props) {
             {/* User Profile Card */}
             <div
               style={{
-                background: 'rgba(15, 23, 42, 0.75)',
-                borderRadius: 18,
-                padding: '28px 24px',
+                background: 'rgba(20, 26, 38, 0.65)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderRadius: 20,
+                padding: '30px 24px',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 12px 35px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
                 textAlign: 'center',
                 marginBottom: 20,
               }}
             >
               <div
                 style={{
-                  width: 72,
-                  height: 72,
+                  width: 76,
+                  height: 76,
                   borderRadius: '50%',
-                  background: '#4F46E5',
-                  border: '2px solid rgba(255, 255, 255, 0.15)',
+                  background: 'linear-gradient(135deg, #FDE047 0%, #F5C518 50%, #D97706 100%)',
+                  border: '3px solid rgba(255, 255, 255, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#FFFFFF',
-                  fontWeight: 800,
-                  fontSize: 28,
+                  color: '#0A0D14',
+                  fontWeight: 900,
+                  fontSize: 30,
                   margin: '0 auto 14px',
-                  boxShadow: '0 4px 20px rgba(79, 70, 229, 0.35)',
+                  boxShadow: '0 8px 30px rgba(245, 197, 24, 0.35)',
                 }}
               >
                 {userInitial}
               </div>
 
-              <h2 style={{ color: '#F8FAFC', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
+              <h2 style={{ color: '#F8FAFC', fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
                 {profile.displayName || 'Authorized User'}
               </h2>
 
               {profile.nickname && (
-                <p style={{ color: '#818CF8', fontSize: 13, marginBottom: 4 }}>
+                <p style={{ color: '#F5C518', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
                   @{profile.nickname}
                 </p>
               )}
@@ -253,13 +277,13 @@ function ProfilePage(props) {
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 4,
-                    color: '#64748B',
+                    gap: 5,
+                    color: '#F3E5AB',
                     fontSize: 12,
                     marginTop: 8,
                   }}
                 >
-                  <LuMapPin size={12} />
+                  <LuMapPin size={13} color="#F5C518" />
                   <span>{profile.city}</span>
                 </div>
               )}
@@ -294,9 +318,12 @@ function ProfilePage(props) {
             {/* Form Fields Card */}
             <div
               style={{
-                background: 'rgba(15, 23, 42, 0.75)',
-                borderRadius: 16,
+                background: 'rgba(20, 26, 38, 0.65)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                borderRadius: 18,
                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
                 overflow: 'hidden',
                 marginBottom: 20,
               }}
@@ -316,14 +343,15 @@ function ProfilePage(props) {
                   >
                     <div
                       style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 8,
-                        background: 'rgba(255, 255, 255, 0.04)',
+                        width: 36,
+                        height: 36,
+                        borderRadius: 10,
+                        background: 'rgba(245, 197, 24, 0.1)',
+                        border: '1px solid rgba(245, 197, 24, 0.2)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#818CF8',
+                        color: '#F5C518',
                         flexShrink: 0,
                       }}
                     >
@@ -334,7 +362,7 @@ function ProfilePage(props) {
                       <p
                         style={{
                           fontSize: 10,
-                          color: '#64748B',
+                          color: '#F3E5AB',
                           marginBottom: 3,
                           fontWeight: 700,
                           textTransform: 'uppercase',
@@ -351,13 +379,14 @@ function ProfilePage(props) {
                           placeholder={`Enter ${field.label.toLowerCase()}...`}
                           style={{
                             background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid #4F46E5',
-                            borderRadius: 6,
-                            padding: '6px 10px',
+                            border: '1px solid #F5C518',
+                            borderRadius: 8,
+                            padding: '7px 12px',
                             color: '#F8FAFC',
                             fontSize: 13,
                             outline: 'none',
                             width: '100%',
+                            boxShadow: '0 0 0 3px rgba(245, 197, 24, 0.15)',
                           }}
                         />
                       ) : (
@@ -390,7 +419,7 @@ function ProfilePage(props) {
                     padding: '12px',
                     background: 'rgba(255, 255, 255, 0.06)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 8,
+                    borderRadius: 10,
                     color: '#CBD5E1',
                     fontSize: 13,
                     fontWeight: 600,
@@ -405,18 +434,22 @@ function ProfilePage(props) {
                   style={{
                     flex: 2,
                     padding: '12px',
-                    background: '#4F46E5',
+                    background: saving ? 'rgba(245, 197, 24, 0.5)' : '#F5C518',
                     border: 'none',
-                    borderRadius: 8,
-                    color: '#FFFFFF',
+                    borderRadius: 10,
+                    color: '#0A0D14',
                     fontSize: 13,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: saving ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
+                    boxShadow: '0 4px 18px rgba(245, 197, 24, 0.35)',
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={e => { if (!saving) e.currentTarget.style.background = '#E5B50F'; }}
+                  onMouseLeave={e => { if (!saving) e.currentTarget.style.background = '#F5C518'; }}
                 >
                   {saving ? (
                     <>
@@ -436,11 +469,12 @@ function ProfilePage(props) {
                 <button
                   onClick={() => navigate('/chat')}
                   style={{
-                    padding: '12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 10,
-                    color: '#CBD5E1',
+                    padding: '13px',
+                    background: 'rgba(20, 26, 38, 0.65)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 12,
+                    color: '#F8FAFC',
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -448,19 +482,23 @@ function ProfilePage(props) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                 >
-                  <LuMessagesSquare size={16} color="#818CF8" />
+                  <LuMessagesSquare size={16} color="#F5C518" />
                   <span>Dialogue Console</span>
                 </button>
                 <button
                   onClick={() => navigate('/bookings')}
                   style={{
-                    padding: '12px',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: 10,
-                    color: '#CBD5E1',
+                    padding: '13px',
+                    background: 'rgba(20, 26, 38, 0.65)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: 12,
+                    color: '#F8FAFC',
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
@@ -468,7 +506,10 @@ function ProfilePage(props) {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8,
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'}
                 >
                   <LuBookmark size={16} color="#34D399" />
                   <span>Reservations</span>

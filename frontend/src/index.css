@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 *, *::before, *::after {
   margin: 0;
@@ -7,55 +7,53 @@
 }
 
 :root {
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Enterprise Slate Palette */
-  --bg-primary: #090D16;
-  --bg-secondary: #0E1322;
-  --bg-surface: #131B2E;
-  --bg-surface-elevated: #1B243B;
-  --bg-card: rgba(19, 27, 46, 0.75);
-  --bg-card-hover: rgba(27, 36, 59, 0.85);
+  /* Deep Glass Canvas */
+  --bg-dark: #080A0F;
+  --bg-gradient: radial-gradient(circle at 50% 0%, #151A24 0%, #080A0F 85%);
 
-  /* Primary Accent: Indigo / Cobalt */
-  --accent-primary: #4F46E5;
-  --accent-primary-hover: #4338CA;
-  --accent-glow: rgba(79, 70, 229, 0.25);
-  --accent-secondary: #06B6D4;
+  /* Sidecar Yellow Palette */
+  --sidecar-cream: #F3E5AB;
+  --sidecar-yellow: #F5C518;
+  --sidecar-yellow-hover: #E5B50F;
+  --sidecar-amber: #D97706;
+  --sidecar-light: #FEF08A;
+  --sidecar-dark: #78350F;
+  --sidecar-glow: rgba(245, 197, 24, 0.35);
+  --sidecar-glow-soft: rgba(243, 229, 171, 0.12);
+
+  /* Glassmorphism Surface Tokens */
+  --glass-bg: rgba(22, 27, 38, 0.55);
+  --glass-bg-hover: rgba(30, 37, 52, 0.7);
+  --glass-bg-active: rgba(40, 48, 68, 0.8);
+  --glass-header: rgba(12, 16, 24, 0.65);
+  --glass-modal: rgba(14, 18, 28, 0.85);
+
+  /* Glass Borders & Inset Highlights */
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-light: rgba(255, 255, 255, 0.18);
+  --glass-border-sidecar: rgba(245, 197, 24, 0.38);
+  --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  --glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
 
   /* Semantic */
-  --success: #10B981;
-  --success-bg: rgba(16, 185, 129, 0.12);
-  --success-border: rgba(16, 185, 129, 0.3);
-  --warning: #F59E0B;
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --danger: #EF4444;
-  --danger-bg: rgba(239, 68, 68, 0.12);
-  --danger-border: rgba(239, 68, 68, 0.3);
+  --success: #34D399;
+  --danger: #F87171;
 
-  /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.22);
-  --border-accent: rgba(99, 102, 241, 0.4);
-
-  /* Text */
-  --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: #E2E8F0;
   --text-muted: #94A3B8;
   --text-subtle: #64748B;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 14px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 30px -3px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.25);
+  --text-dark: #0A0D14;
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-primary);
+  background-color: var(--bg-dark);
+  background-image: var(--bg-gradient);
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
@@ -73,10 +71,29 @@ a {
   text-decoration: none;
 }
 
-/* Minimal Custom Scrollbar */
+/* Glass Card Utility */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  border-radius: 16px;
+}
+
+.glass-card-sidecar {
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border-sidecar);
+  box-shadow: 0 10px 30px var(--sidecar-glow-soft), var(--glass-highlight);
+  border-radius: 16px;
+}
+
+/* Custom Scrollbar in Sidecar Yellow Glow */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -84,23 +101,26 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(245, 197, 24, 0.25);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(245, 197, 24, 0.5);
 }
 
-/* Glass Surface Utility */
-.glass-panel {
-  background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-}
-
-/* Focus styles */
+/* Glass Inputs */
 input:focus, button:focus-visible {
   outline: none;
+}
+
+/* Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
 }

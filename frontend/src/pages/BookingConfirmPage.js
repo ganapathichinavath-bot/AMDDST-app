@@ -57,18 +57,18 @@ function BookingConfirmPage(props) {
 
   const getDomainMeta = () => {
     if (booking.type === 'hotel') {
-      return { icon: LuBed, label: 'Hotel Accommodation', color: '#6366F1' };
+      return { icon: LuBed, label: 'Hotel Accommodation', color: '#F5C518' };
     }
     if (booking.type === 'restaurant') {
-      return { icon: LuUtensils, label: 'Dining Reservation', color: '#EC4899' };
+      return { icon: LuUtensils, label: 'Dining Reservation', color: '#F5C518' };
     }
     if (booking.type === 'attraction') {
-      return { icon: LuLandmark, label: 'Attraction Booking', color: '#10B981' };
+      return { icon: LuLandmark, label: 'Attraction Booking', color: '#F5C518' };
     }
     if (booking.type === 'taxi') {
-      return { icon: LuCar, label: 'Ground Transit Dispatch', color: '#F59E0B' };
+      return { icon: LuCar, label: 'Ground Transit Dispatch', color: '#F5C518' };
     }
-    return { icon: LuBed, label: 'Booking', color: '#6366F1' };
+    return { icon: LuBed, label: 'Reservation', color: '#F5C518' };
   };
 
   const meta = getDomainMeta();
@@ -89,7 +89,8 @@ function BookingConfirmPage(props) {
     <div
       style={{
         minHeight: '100vh',
-        background: '#090D16',
+        background: '#080A0F',
+        backgroundImage: 'radial-gradient(circle at 50% 20%, #151A24 0%, #080A0F 85%)',
         color: '#F8FAFC',
         display: 'flex',
         alignItems: 'center',
@@ -101,12 +102,13 @@ function BookingConfirmPage(props) {
         style={{
           width: '100%',
           maxWidth: 480,
-          background: 'rgba(15, 23, 42, 0.85)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: 20,
+          background: 'rgba(20, 26, 38, 0.7)',
+          backdropFilter: 'blur(28px)',
+          WebkitBackdropFilter: 'blur(28px)',
+          borderRadius: 22,
           overflow: 'hidden',
           border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12)',
         }}
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -116,7 +118,7 @@ function BookingConfirmPage(props) {
         <div
           style={{
             padding: '24px 28px',
-            background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%)',
+            background: 'linear-gradient(135deg, rgba(30, 38, 54, 0.75) 0%, rgba(16, 21, 32, 0.85) 100%)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
@@ -128,16 +130,16 @@ function BookingConfirmPage(props) {
               width: 44,
               height: 44,
               borderRadius: 12,
-              background: `${meta.color}18`,
-              border: `1px solid ${meta.color}35`,
-              color: meta.color,
+              background: 'rgba(245, 197, 24, 0.14)',
+              border: '1px solid rgba(245, 197, 24, 0.32)',
+              color: '#F5C518',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}
           >
-            {confirmed ? <LuCircleCheck size={24} color="#10B981" /> : <DomainIcon size={22} />}
+            {confirmed ? <LuCircleCheck size={24} color="#34D399" /> : <DomainIcon size={22} />}
           </div>
 
           <div>
@@ -145,14 +147,14 @@ function BookingConfirmPage(props) {
               style={{
                 fontSize: 11,
                 fontWeight: 700,
-                color: meta.color,
+                color: '#F5C518',
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em',
+                letterSpacing: '0.06em',
               }}
             >
               {meta.label}
             </span>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F8FAFC', marginTop: 2 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#F8FAFC', marginTop: 2 }}>
               {confirmed ? 'Reservation Confirmed' : 'Review & Confirm'}
             </h2>
           </div>
@@ -165,7 +167,7 @@ function BookingConfirmPage(props) {
           <div
             style={{
               background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: 12,
+              borderRadius: 14,
               padding: '16px 18px',
               border: '1px solid rgba(255, 255, 255, 0.07)',
               marginBottom: 18,
@@ -182,14 +184,15 @@ function BookingConfirmPage(props) {
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div
                       style={{
-                        width: 26,
-                        height: 26,
+                        width: 28,
+                        height: 28,
                         borderRadius: 6,
                         background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#64748B',
+                        color: '#F3E5AB',
                         flexShrink: 0,
                       }}
                     >
@@ -211,14 +214,14 @@ function BookingConfirmPage(props) {
           {props.user && (
             <div
               style={{
-                background: 'rgba(79, 70, 229, 0.08)',
-                border: '1px solid rgba(79, 70, 229, 0.2)',
-                borderRadius: 10,
+                background: 'rgba(245, 197, 24, 0.08)',
+                border: '1px solid rgba(245, 197, 24, 0.25)',
+                borderRadius: 12,
                 padding: '12px 16px',
                 marginBottom: 20,
               }}
             >
-              <p style={{ fontSize: 11, color: '#818CF8', fontWeight: 600, marginBottom: 2 }}>
+              <p style={{ fontSize: 11, color: '#F5C518', fontWeight: 700, letterSpacing: '0.05em', marginBottom: 2 }}>
                 PRIMARY CONTACT
               </p>
               <p style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>
@@ -234,8 +237,8 @@ function BookingConfirmPage(props) {
                 style={{
                   background: 'rgba(16, 185, 129, 0.12)',
                   border: '1px solid rgba(16, 185, 129, 0.3)',
-                  borderRadius: 10,
-                  padding: '14px 16px',
+                  borderRadius: 12,
+                  padding: '16px 18px',
                   textAlign: 'center',
                   marginBottom: 18,
                 }}
@@ -245,10 +248,11 @@ function BookingConfirmPage(props) {
                 </p>
                 <p
                   style={{
-                    color: '#F8FAFC',
-                    fontSize: 16,
+                    color: '#F5C518',
+                    fontSize: 18,
                     fontWeight: 800,
                     fontFamily: 'var(--font-mono, monospace)',
+                    letterSpacing: '0.05em',
                   }}
                 >
                   {bookingId}
@@ -260,15 +264,19 @@ function BookingConfirmPage(props) {
                   onClick={() => navigate('/bookings')}
                   style={{
                     flex: 1,
-                    padding: '11px',
-                    background: '#4F46E5',
-                    color: '#FFFFFF',
+                    padding: '12px',
+                    background: '#F5C518',
+                    color: '#0A0D14',
                     border: 'none',
-                    borderRadius: 8,
+                    borderRadius: 10,
                     fontSize: 13,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     cursor: 'pointer',
+                    boxShadow: '0 4px 18px rgba(245, 197, 24, 0.3)',
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#E5B50F'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#F5C518'}
                 >
                   View in Reservations
                 </button>
@@ -276,15 +284,18 @@ function BookingConfirmPage(props) {
                   onClick={() => navigate('/chat')}
                   style={{
                     flex: 1,
-                    padding: '11px',
+                    padding: '12px',
                     background: 'rgba(255, 255, 255, 0.06)',
                     color: '#CBD5E1',
                     border: '1px solid rgba(255, 255, 255, 0.12)',
-                    borderRadius: 8,
+                    borderRadius: 10,
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: 'pointer',
+                    transition: 'all 0.15s ease',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'}
                 >
                   Resume Console
                 </button>
@@ -296,11 +307,11 @@ function BookingConfirmPage(props) {
                 onClick={() => navigate('/chat')}
                 style={{
                   flex: 1,
-                  padding: '11px',
+                  padding: '12px',
                   background: 'rgba(255, 255, 255, 0.05)',
                   color: '#CBD5E1',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -308,7 +319,10 @@ function BookingConfirmPage(props) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 6,
+                  transition: 'all 0.15s ease',
                 }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
               >
                 <LuArrowLeft size={14} /> Back
               </button>
@@ -318,19 +332,23 @@ function BookingConfirmPage(props) {
                 disabled={saving}
                 style={{
                   flex: 2,
-                  padding: '11px',
-                  background: saving ? 'rgba(79, 70, 229, 0.5)' : '#4F46E5',
-                  color: '#FFFFFF',
+                  padding: '12px',
+                  background: saving ? 'rgba(245, 197, 24, 0.5)' : '#F5C518',
+                  color: '#0A0D14',
                   border: 'none',
-                  borderRadius: 8,
+                  borderRadius: 10,
                   fontSize: 13,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: saving ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
+                  boxShadow: '0 4px 18px rgba(245, 197, 24, 0.35)',
+                  transition: 'all 0.15s ease',
                 }}
+                onMouseEnter={e => { if (!saving) e.currentTarget.style.background = '#E5B50F'; }}
+                onMouseLeave={e => { if (!saving) e.currentTarget.style.background = '#F5C518'; }}
               >
                 {saving ? (
                   <>

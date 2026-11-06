@@ -46,18 +46,18 @@ function BookingsPage(props) {
   const getDomainMeta = (item) => {
     const t = ((item?.name || item?.title || '') + ' ' + (item?.type || '')).toLowerCase();
     if (item?.type === 'hotel' || t.includes('hotel')) {
-      return { icon: LuBed, label: 'Hotel', color: '#6366F1' };
+      return { icon: LuBed, label: 'Hotel', color: '#F5C518' };
     }
     if (item?.type === 'restaurant' || t.includes('restaurant') || t.includes('food')) {
-      return { icon: LuUtensils, label: 'Dining', color: '#EC4899' };
+      return { icon: LuUtensils, label: 'Dining', color: '#F5C518' };
     }
     if (item?.type === 'attraction' || t.includes('museum') || t.includes('theatre') || t.includes('park')) {
-      return { icon: LuLandmark, label: 'Attraction', color: '#10B981' };
+      return { icon: LuLandmark, label: 'Attraction', color: '#F5C518' };
     }
     if (item?.type === 'taxi' || t.includes('taxi') || t.includes('cab')) {
-      return { icon: LuCar, label: 'Transit', color: '#F59E0B' };
+      return { icon: LuCar, label: 'Transit', color: '#F5C518' };
     }
-    return { icon: LuBookmark, label: 'Booking', color: '#6366F1' };
+    return { icon: LuBookmark, label: 'Booking', color: '#F5C518' };
   };
 
   const getCategory = (item) => {
@@ -86,14 +86,21 @@ function BookingsPage(props) {
     : bookings.filter(b => getCategory(b) === filter);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#090D16', color: '#F8FAFC' }}>
-
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#080A0F',
+        backgroundImage: 'radial-gradient(circle at 50% 0%, #151A24 0%, #080A0F 85%)',
+        color: '#F8FAFC',
+      }}
+    >
       {/* Header Bar */}
       <header
         style={{
           padding: '16px 36px',
-          background: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(20px)',
+          background: 'rgba(12, 16, 24, 0.65)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
           alignItems: 'center',
@@ -116,7 +123,10 @@ function BookingsPage(props) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            transition: 'all 0.15s ease',
           }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
         >
           <LuArrowLeft size={16} />
         </button>
@@ -127,8 +137,9 @@ function BookingsPage(props) {
               width: 34,
               height: 34,
               borderRadius: 8,
-              background: 'rgba(79, 70, 229, 0.15)',
-              color: '#818CF8',
+              background: 'rgba(245, 197, 24, 0.14)',
+              border: '1px solid rgba(245, 197, 24, 0.3)',
+              color: '#F5C518',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -144,7 +155,7 @@ function BookingsPage(props) {
         <span
           style={{
             marginLeft: 'auto',
-            color: '#94A3B8',
+            color: '#F3E5AB',
             fontSize: 12,
             fontFamily: 'var(--font-mono, monospace)',
           }}
@@ -153,7 +164,7 @@ function BookingsPage(props) {
         </span>
       </header>
 
-      <div style={{ maxWidth: 840, margin: '0 auto', padding: '32px 24px' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '32px 24px' }}>
 
         {/* Filter Navigation Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, overflowX: 'auto', paddingBottom: 4 }}>
@@ -171,19 +182,22 @@ function BookingsPage(props) {
                 key={f.key}
                 onClick={() => setFilter(f.key)}
                 style={{
-                  padding: '7px 16px',
-                  background: active ? '#4F46E5' : 'rgba(255, 255, 255, 0.04)',
-                  border: `1px solid ${active ? '#6366F1' : 'rgba(255, 255, 255, 0.08)'}`,
-                  borderRadius: 8,
-                  color: active ? '#FFFFFF' : '#94A3B8',
+                  padding: '8px 16px',
+                  background: active ? '#F5C518' : 'rgba(20, 26, 38, 0.55)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  border: `1px solid ${active ? '#E5B50F' : 'rgba(255, 255, 255, 0.08)'}`,
+                  borderRadius: 10,
+                  color: active ? '#0A0D14' : '#94A3B8',
                   cursor: 'pointer',
                   fontSize: 12,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
                   transition: 'all 0.15s',
+                  boxShadow: active ? '0 4px 16px rgba(245, 197, 24, 0.3)' : 'none',
                 }}
               >
                 <Icon size={14} />
@@ -200,9 +214,10 @@ function BookingsPage(props) {
               <div
                 key={i}
                 style={{
-                  height: 90,
+                  height: 95,
                   borderRadius: 14,
-                  background: 'rgba(15, 23, 42, 0.65)',
+                  background: 'rgba(20, 26, 38, 0.55)',
+                  backdropFilter: 'blur(20px)',
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                 }}
               />
@@ -213,44 +228,52 @@ function BookingsPage(props) {
             style={{
               textAlign: 'center',
               padding: '60px 24px',
-              background: 'rgba(15, 23, 42, 0.5)',
-              borderRadius: 16,
-              border: '1px solid rgba(255, 255, 255, 0.06)',
+              background: 'rgba(20, 26, 38, 0.55)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              borderRadius: 18,
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              boxShadow: '0 12px 35px rgba(0, 0, 0, 0.4)',
             }}
           >
             <div
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: '#64748B',
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                background: 'rgba(245, 197, 24, 0.1)',
+                border: '1px solid rgba(245, 197, 24, 0.25)',
+                color: '#F5C518',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 margin: '0 auto 16px',
               }}
             >
-              <LuSearch size={22} />
+              <LuSearch size={24} />
             </div>
-            <h3 style={{ color: '#F8FAFC', fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
+            <h3 style={{ color: '#F8FAFC', fontSize: 17, fontWeight: 700, marginBottom: 6 }}>
               No reservations logged
             </h3>
-            <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 24, maxWidth: 360, margin: '0 auto 24px' }}>
-              Confirm hotel bookings, restaurant tables, or taxi rides in the dialogue console to track them here.
+            <p style={{ color: '#94A3B8', fontSize: 13, marginBottom: 24, maxWidth: 380, margin: '0 auto 24px' }}>
+              Confirm hotel bookings, restaurant tables, or transit dispatches in the dialogue console to track them here.
             </p>
             <button
               onClick={() => navigate('/chat')}
               style={{
-                padding: '10px 24px',
-                background: '#4F46E5',
-                color: '#FFFFFF',
+                padding: '11px 26px',
+                background: '#F5C518',
+                color: '#0A0D14',
                 border: 'none',
-                borderRadius: 8,
+                borderRadius: 10,
                 fontSize: 13,
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer',
+                boxShadow: '0 4px 18px rgba(245, 197, 24, 0.35)',
+                transition: 'all 0.2s',
               }}
+              onMouseEnter={e => e.currentTarget.style.background = '#E5B50F'}
+              onMouseLeave={e => e.currentTarget.style.background = '#F5C518'}
             >
               Launch Dialogue Console
             </button>
@@ -265,23 +288,26 @@ function BookingsPage(props) {
                 <div
                   key={booking.id || i}
                   style={{
-                    background: 'rgba(15, 23, 42, 0.75)',
-                    borderRadius: 14,
-                    padding: '18px 20px',
+                    background: 'rgba(20, 26, 38, 0.65)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    borderRadius: 16,
+                    padding: '18px 22px',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                    transition: 'all 0.2s ease',
                   }}
                 >
                   <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                     <div
                       style={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 10,
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
                         flexShrink: 0,
-                        background: `${meta.color}15`,
-                        border: `1px solid ${meta.color}30`,
-                        color: meta.color,
+                        background: 'rgba(245, 197, 24, 0.12)',
+                        border: '1px solid rgba(245, 197, 24, 0.3)',
+                        color: '#F5C518',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -308,8 +334,8 @@ function BookingsPage(props) {
                             <p
                               style={{
                                 fontSize: 11,
-                                color: '#10B981',
-                                fontWeight: 600,
+                                color: '#F5C518',
+                                fontWeight: 700,
                                 fontFamily: 'var(--font-mono, monospace)',
                               }}
                             >
@@ -323,11 +349,11 @@ function BookingsPage(props) {
                             style={{
                               fontSize: 11,
                               color: '#34D399',
-                              background: 'rgba(16, 185, 129, 0.12)',
+                              background: 'rgba(16, 185, 129, 0.14)',
                               border: '1px solid rgba(16, 185, 129, 0.3)',
                               padding: '2px 8px',
                               borderRadius: 6,
-                              fontWeight: 600,
+                              fontWeight: 700,
                               textTransform: 'uppercase',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -336,7 +362,7 @@ function BookingsPage(props) {
                           >
                             <LuCircleCheck size={12} /> Confirmed
                           </span>
-                          <span style={{ fontSize: 11, color: '#64748B', marginLeft: 6 }}>
+                          <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 6 }}>
                             {formatDate(booking.createdAt)}
                           </span>
                         </div>
@@ -366,7 +392,8 @@ function BookingsPage(props) {
                               padding: '2px 8px',
                               borderRadius: 6,
                               background: 'rgba(255, 255, 255, 0.05)',
-                              color: '#CBD5E1',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
+                              color: '#F3E5AB',
                               textTransform: 'capitalize',
                             }}
                           >
@@ -381,6 +408,7 @@ function BookingsPage(props) {
                               padding: '2px 8px',
                               borderRadius: 6,
                               background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
                               color: '#CBD5E1',
                               textTransform: 'capitalize',
                             }}
@@ -396,6 +424,7 @@ function BookingsPage(props) {
                               padding: '2px 8px',
                               borderRadius: 6,
                               background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid rgba(255, 255, 255, 0.08)',
                               color: '#CBD5E1',
                               textTransform: 'capitalize',
                             }}
@@ -408,13 +437,14 @@ function BookingsPage(props) {
                           <span
                             style={{
                               fontSize: 11,
-                              color: '#38BDF8',
+                              color: '#F3E5AB',
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 4,
+                              fontFamily: 'var(--font-mono, monospace)',
                             }}
                           >
-                            <LuPhone size={12} /> {booking.phone}
+                            <LuPhone size={12} color="#F5C518" /> {booking.phone}
                           </span>
                         )}
                       </div>
