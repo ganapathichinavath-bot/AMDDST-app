@@ -31,8 +31,6 @@ import {
   LuSend,
   LuMic,
   LuMicOff,
-  LuPaperclip,
-  LuHouse,
   LuUser,
   LuLogOut,
   LuBookmark,
@@ -47,7 +45,7 @@ import {
   LuCar,
   LuCheck,
   LuRefreshCw,
-  LuDownload
+  LuArrowLeft
 } from 'react-icons/lu';
 
 function getSmartResponse(text, userName) {
@@ -59,7 +57,7 @@ function getSmartResponse(text, userName) {
   }
   if (isAppInfoQuery(text)) {
     return {
-      message: `**AMDDST Capabilities & Architecture:**\n\n• **Accommodations** — Locate lodging by area (centre, north, south, east, west), budget (cheap, moderate, expensive), parking, and WiFi.\n• **Dining** — Filter by regional cuisines (Indian, Italian, Chinese, British, etc.), area, and budget.\n• **Cultural Attractions** — Locate museums, galleries, theatres, and parks with entry details.\n• **Ground Transit** — Schedule immediate or future taxi dispatch.\n\n**Sample Prompts:**\n• "I need a budget-friendly hotel in the centre with free parking"\n• "Find an Italian restaurant in the south area"\n• "Looking for a museum to visit"\n• "Book a taxi to the train station"\n\n*All state inference is powered by our MultiWOZ 2.1 fine-tuned sequence model with ASR error correction.*`
+      message: `**AMDDST Architecture Overview:**\n\n• **Model**: Fine-tuned Sequence-to-Sequence BART with entity substitution augmentation\n• **Benchmark**: DSTC-10 multi-domain benchmark track\n• **Loss Metric**: 0.057 converged cross-entropy\n• **Domains**: Accommodations, Dining, Attractions, Transit (Cambridge MultiWOZ 2.1 ontology)\n• **Speech Robustness**: Integrated Levenshtein phonetic distance error recovery`
     };
   }
   return null;
@@ -67,29 +65,33 @@ function getSmartResponse(text, userName) {
 
 function detectDomainFromText(text) {
   const t = text.toLowerCase();
-  const taxiWords = ['taxi', 'cab', 'ride', 'uber', 'pickup', 'pick up', 'driver', 'car service', 'book a car', 'need a car', 'get a cab'];
-  if (taxiWords.some(w => t.includes(w))) return 'taxi';
-
-  const hotelWords = ['hotel', 'stay', 'room', 'accommodation', 'guesthouse', 'lodge', 'bed and breakfast', 'b&b', 'hostel', 'overnight', 'check in', 'checkin'];
-  if (hotelWords.some(w => t.includes(w))) return 'hotel';
-
-  const restaurantWords = ['restaurant', 'food', 'eat', 'dining', 'dinner', 'lunch', 'cafe', 'cuisine', 'indian', 'chinese', 'italian', 'thai', 'mexican', 'british', 'mediterranean', 'portuguese', 'european'];
-  if (restaurantWords.some(w => t.includes(w))) return 'restaurant';
-
-  const attractionWords = ['museum', 'attraction', 'visit', 'theatre', 'theater', 'cinema', 'movie', 'park', 'gallery', 'church', 'college', 'sightseeing', 'explore', 'tourist'];
-  if (attractionWords.some(w => t.includes(w))) return 'attraction';
-
+  if (t.includes('hotel') || t.includes('stay') || t.includes('room') || t.includes('guesthouse') || t.includes('lodge') || t.includes('b&b') || t.includes('accommodation') || t.includes('place to stay')) {
+    return 'hotel';
+  }
+  if (t.includes('food') || t.includes('restaurant') || t.includes('eat') || t.includes('dine') || t.includes('dinner') || t.includes('lunch') || t.includes('breakfast') || t.includes('cuisine') || t.includes('italian') || t.includes('chinese') || t.includes('indian') || t.includes('thai') || t.includes('mexican') || t.includes('british')) {
+    return 'restaurant';
+  }
+  if (t.includes('museum') || t.includes('theatre') || t.includes('theater') || t.includes('cinema') || t.includes('park') || t.includes('attraction') || t.includes('gallery') || t.includes('visit') || t.includes('sightseeing') || t.includes('place to visit')) {
+    return 'attraction';
+  }
+  if (t.includes('taxi') || t.includes('cab') || t.includes('ride') || t.includes('transit') || t.includes('drive me') || t.includes('pick me up') || t.includes('pickup') || t.includes('drop me') || t.includes('car service') || t.includes('book a ride') || t.includes('call a cab')) {
+    return 'taxi';
+  }
   return null;
 }
 
 function extractSlotsByDomain(text, domain) {
-  const slots = {};
   const t = text.toLowerCase();
-
+  const slots = {};
   if (domain === 'taxi') {
-    if (t.includes('cheap') || t.includes('budget')) slots['taxi-pricerange'] = 'cheap';
-    if (t.includes('expensive') || t.includes('luxury')) slots['taxi-pricerange'] = 'expensive';
-    if (t.includes('moderate')) slots['taxi-pricerange'] = 'moderate';
+    const destMatch = t.match(/(?:to|destination|going to|drop off at|drop at|arrive at)\s+([a-z\s&'-]+?)(?=\s+(?:from|at|leave|by|please|$))/i);
+    if (destMatch && destMatch[1]) slots['taxi-destination'] = destMatch[1].trim();
+    const deptMatch = t.match(/(?:from|departing|leaving|pickup from|pick up at|pickup at)\s+([a-z\s&'-]+?)(?=\s+(?:to|at|leave|by|please|$))/i);
+    if (deptMatch && deptMatch[1]) slots['taxi-departure'] = deptMatch[1].trim();
+    const leaveMatch = t.match(/(?:leave at|leaving at|depart at|leave by)\s+([0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?)/i);
+    if (leaveMatch && leaveMatch[1]) slots['taxi-leaveat'] = leaveMatch[1].trim();
+    const arriveMatch = t.match(/(?:arrive by|arrive at|be there by)\s+([0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?)/i);
+    if (arriveMatch && arriveMatch[1]) slots['taxi-arriveby'] = arriveMatch[1].trim();
     return slots;
   }
   if (domain === 'hotel') {
@@ -145,15 +147,13 @@ function ChatPage(props) {
 
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: 'Welcome to **AMDDST** (Adaptive Multi-Domain Dialogue State Tracker).\n\nI track conversational belief state across **Accommodations**, **Dining**, **Attractions**, and **Transit**.\n\nEnter your inquiry or select a domain below to begin.',
+    content: 'Welcome to **AMDDST** (Adaptive Multi-Domain Dialogue State Tracker).\n\nI track conversational belief state across **Accommodations**, **Dining**, **Attractions**, and **Transit**.\n\nEnter your inquiry below to begin.',
     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   }]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const [installPrompt, setInstallPrompt] = useState(null);
-  const [showInstall, setShowInstall] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
   const [searchType, setSearchType] = useState('');
@@ -163,18 +163,14 @@ function ChatPage(props) {
   const [hoveredConvId, setHoveredConvId] = useState(null);
   const [sessionMessages, setSessionMessages] = useState([]);
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
   const currentSessionDocId = useRef(null);
   const currentSessionId = useRef(`session_${Date.now()}`);
 
   const userName = props.user?.displayName || props.user?.email?.split('@')[0] || '';
-  const userInitial = userName ? userName[0].toUpperCase() : 'G';
+  const userInitial = userName ? userName[0].toUpperCase() : 'U';
 
-  useEffect(() => { setTimeout(() => setPageLoading(false), 400); }, []);
+  useEffect(() => { setTimeout(() => setPageLoading(false), 300); }, []);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-  useEffect(() => {
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); setInstallPrompt(e); setShowInstall(true); });
-  }, []);
 
   useEffect(() => {
     const loadConversations = async () => {
@@ -274,13 +270,13 @@ function ChatPage(props) {
     setIsLoading(true);
     setSearchResults(null);
 
-    // Step 1: Smart local responses (greetings, info)
+    // Step 1: Smart local responses
     const smartResponse = getSmartResponse(text, userName);
     if (smartResponse) {
       setTimeout(() => {
         setMessages(prev => [...prev, { role: 'assistant', content: smartResponse.message, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
         setIsLoading(false);
-      }, 350);
+      }, 300);
       return;
     }
 
@@ -289,7 +285,7 @@ function ChatPage(props) {
     const userSlots = userDomain ? extractSlotsByDomain(text, userDomain) : {};
 
     try {
-      // Step 3: Call AI state tracking model (via backend with fallback)
+      // Step 3: Call AI state tracking model
       const { botReply, aiSlots } = await predictDialogueState(text, []);
 
       // Step 4: Domain resolution
@@ -347,36 +343,18 @@ function ChatPage(props) {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#080A0F', color: '#F8FAFC', overflow: 'hidden', position: 'relative' }}>
-
-      {/* Sidecar Yellow Ambient Orbs */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -80,
-          left: '30%',
-          width: 500,
-          height: 500,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(245, 197, 24, 0.1) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          bottom: -100,
-          right: '20%',
-          width: 600,
-          height: 600,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(243, 229, 171, 0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-
+    <div
+      style={{
+        display: 'flex',
+        height: '100dvh',
+        minHeight: '100vh',
+        background: '#080A0F',
+        backgroundImage: 'radial-gradient(circle at 50% 0%, #151A24 0%, #080A0F 85%)',
+        color: '#F8FAFC',
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+    >
       {/* Logout Glass Modal */}
       <AnimatePresence>
         {showLogoutModal && (
@@ -567,31 +545,69 @@ function ChatPage(props) {
               position: isMobile ? 'fixed' : 'relative',
               top: 0,
               left: 0,
-              height: '100vh',
+              height: '100%',
               zIndex: isMobile ? 110 : 2,
+              flexShrink: 0,
             }}
             initial={{ x: -290 }}
             animate={{ x: 0 }}
             exit={{ x: -290 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
           >
-            {/* Sidebar Brand */}
+            {/* Top Left Navigation Header on Logo */}
             <div
-              onClick={() => navigate('/')}
               style={{
-                padding: '18px 20px',
+                padding: '14px 16px',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 8,
               }}
             >
-              <BrandLogo size={32} subtitle="Console" />
+              <button
+                onClick={() => navigate('/')}
+                title="Return to Home"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  background: 'rgba(245, 197, 24, 0.12)',
+                  border: '1px solid rgba(245, 197, 24, 0.35)',
+                  borderRadius: 8,
+                  color: '#F5C518',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#F5C518';
+                  e.currentTarget.style.color = '#0A0D14';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(245, 197, 24, 0.12)';
+                  e.currentTarget.style.color = '#F5C518';
+                }}
+              >
+                <LuArrowLeft size={14} />
+                <span>Home</span>
+              </button>
+
+              <div
+                onClick={() => navigate('/')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                title="AMDDST Platform"
+              >
+                <BrandLogo size={28} subtitle="Console" />
+              </div>
+
               {isMobile && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setSidebarOpen(false); }}
-                  style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+                  onClick={() => setSidebarOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 4 }}
                 >
                   <LuPanelLeftClose size={18} />
                 </button>
@@ -608,7 +624,7 @@ function ChatPage(props) {
                   setSearchResults(null);
                   setMessages([{
                     role: 'assistant',
-                    content: 'Initialized new dialogue session.\n\nEnter your request for **Hotels**, **Restaurants**, **Attractions**, or **Taxis**.',
+                    content: 'Initialized new dialogue session.\n\nEnter your inquiry for **Hotels**, **Restaurants**, **Attractions**, or **Taxis**.',
                     time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                   }]);
                   if (isMobile) setSidebarOpen(false);
@@ -644,7 +660,7 @@ function ChatPage(props) {
             </div>
 
             {/* Conversation Log List */}
-            <div style={{ padding: '0 12px', flex: 1, overflowY: 'auto' }}>
+            <div style={{ padding: '0 12px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
               <p
                 style={{
                   fontSize: 10,
@@ -757,7 +773,7 @@ function ChatPage(props) {
               )}
             </div>
 
-            {/* Sidebar User Footer in Frosted Glass */}
+            {/* Sidebar User Footer */}
             <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               {props.isGuest ? (
                 <button
@@ -765,7 +781,7 @@ function ChatPage(props) {
                   style={{
                     width: '100%',
                     padding: '10px',
-                    background: 'linear-gradient(135deg, #FDE047, #F5C518)',
+                    background: '#F5C518',
                     color: '#0A0D14',
                     border: 'none',
                     borderRadius: 10,
@@ -773,7 +789,10 @@ function ChatPage(props) {
                     cursor: 'pointer',
                     fontSize: 13,
                     boxShadow: '0 2px 12px rgba(245, 197, 24, 0.3)',
+                    transition: 'all 0.15s',
                   }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#E5B50F'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#F5C518'}
                 >
                   Sign in to Save Sessions
                 </button>
@@ -843,82 +862,94 @@ function ChatPage(props) {
       </AnimatePresence>
 
       {/* Main Console Workspace */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', position: 'relative', zIndex: 1 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%', position: 'relative', zIndex: 1 }}>
 
-        {/* Frosted Glass Header Bar */}
+        {/* Clean Header Bar */}
         <header
           style={{
-            padding: '12px 20px',
+            height: 56,
+            padding: '0 20px',
             background: 'rgba(12, 16, 25, 0.65)',
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 12,
             zIndex: 10,
+            flexShrink: 0,
           }}
         >
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title="Toggle Sidebar"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#F3E5AB',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            {sidebarOpen ? <LuPanelLeftClose size={16} /> : <LuPanelLeft size={16} />}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title="Toggle Sidebar"
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 8,
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#F3E5AB',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {sidebarOpen ? <LuPanelLeftClose size={16} /> : <LuPanelLeft size={16} />}
+            </button>
 
-          <button
-            onClick={() => navigate('/')}
-            title="Return to Home"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#F3E5AB',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <LuHouse size={16} />
-          </button>
+            {/* Direct Home Navigation Button on Topbar (visible when sidebar is closed or on mobile) */}
+            {!sidebarOpen && (
+              <button
+                onClick={() => navigate('/')}
+                title="Return to Home"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  background: 'rgba(245, 197, 24, 0.12)',
+                  border: '1px solid rgba(245, 197, 24, 0.35)',
+                  borderRadius: 8,
+                  color: '#F5C518',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#F5C518';
+                  e.currentTarget.style.color = '#0A0D14';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(245, 197, 24, 0.12)';
+                  e.currentTarget.style.color = '#F5C518';
+                }}
+              >
+                <LuArrowLeft size={14} />
+                <span>Home</span>
+              </button>
+            )}
 
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div>
-              <p style={{ fontWeight: 700, color: '#FFFFFF', fontSize: 13, letterSpacing: '-0.01em' }}>
-                AMDDST Tracking Console
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: '#F5C518',
-                    display: 'inline-block',
-                    boxShadow: '0 0 8px rgba(245, 197, 24, 0.9)',
-                  }}
-                />
-                <span style={{ fontSize: 11, color: '#F3E5AB' }}>
-                  Model Ready · Cambridge MultiWOZ Knowledge Base
-                </span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: '50%',
+                  background: '#F5C518',
+                  display: 'inline-block',
+                  boxShadow: '0 0 8px rgba(245, 197, 24, 0.9)',
+                }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.01em' }}>
+                AMDDST Console
+              </span>
             </div>
           </div>
 
@@ -927,28 +958,52 @@ function ChatPage(props) {
               onClick={() => navigate('/bookings')}
               title="Reservations"
               style={{
-                width: 34,
-                height: 34,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 12px',
                 borderRadius: 8,
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 color: '#F3E5AB',
+                fontSize: 12,
+                fontWeight: 600,
+                transition: 'all 0.15s ease',
               }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'}
             >
-              <LuBookmark size={15} />
+              <LuBookmark size={14} color="#F5C518" />
+              <span>Reservations</span>
             </button>
 
-            {!props.isGuest && (
+            {props.isGuest ? (
+              <button
+                onClick={() => navigate('/login')}
+                style={{
+                  padding: '6px 14px',
+                  background: '#F5C518',
+                  color: '#0A0D14',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#E5B50F'}
+                onMouseLeave={e => e.currentTarget.style.background = '#F5C518'}
+              >
+                Sign In
+              </button>
+            ) : (
               <button
                 onClick={() => navigate('/profile')}
-                title="Profile"
+                title="Account Settings"
                 style={{
-                  width: 34,
-                  height: 34,
+                  width: 32,
+                  height: 32,
                   borderRadius: 8,
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
@@ -957,81 +1012,34 @@ function ChatPage(props) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#F3E5AB',
+                  transition: 'all 0.15s ease',
                 }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(245, 197, 24, 0.4)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)'}
               >
                 <LuUser size={15} />
-              </button>
-            )}
-
-            {showInstall && (
-              <button
-                onClick={async () => {
-                  installPrompt.prompt();
-                  const r = await installPrompt.userChoice;
-                  if (r.outcome === 'accepted') setShowInstall(false);
-                }}
-                style={{
-                  padding: '6px 12px',
-                  background: 'rgba(245, 197, 24, 0.12)',
-                  border: '1px solid rgba(245, 197, 24, 0.35)',
-                  borderRadius: 8,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  color: '#FDE047',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <LuDownload size={13} /> Install App
               </button>
             )}
           </div>
         </header>
 
-        {/* Message Feed */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Message Feed Container */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18,
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {pageLoading ? (
             <ChatSkeleton />
           ) : (
             <>
-              {props.isGuest && (
-                <div
-                  style={{
-                    background: 'rgba(25, 32, 48, 0.6)',
-                    backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(245, 197, 24, 0.25)',
-                    borderRadius: 14,
-                    padding: '12px 18px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <p style={{ color: '#F3E5AB', fontSize: 13, margin: 0 }}>
-                    Operating in guest mode. Sign in to save your sessions and manage active reservations.
-                  </p>
-                  <button
-                    onClick={() => navigate('/login')}
-                    style={{
-                      padding: '7px 18px',
-                      background: 'linear-gradient(135deg, #FDE047, #F5C518)',
-                      color: '#0A0D14',
-                      border: 'none',
-                      borderRadius: 8,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Sign In
-                  </button>
-                </div>
-              )}
-
               <AnimatePresence>
                 {messages.map((msg, index) => (
                   <React.Fragment key={index}>
@@ -1190,23 +1198,24 @@ function ChatPage(props) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Frosted Glass Input Console Bar */}
+        {/* Clean Input Console Bar */}
         <div
           style={{
-            padding: '14px 20px',
+            padding: '12px 20px',
             background: 'rgba(12, 16, 25, 0.7)',
             backdropFilter: 'blur(28px)',
             WebkitBackdropFilter: 'blur(28px)',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            flexShrink: 0,
           }}
         >
           {/* Quick Domain Suggestion Chips */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, overflowX: 'auto', paddingBottom: 2 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10, overflowX: 'auto', paddingBottom: 2 }}>
             {[
-              { label: 'Accommodations', query: 'I need a hotel in the centre', icon: LuBed },
-              { label: 'Italian Dining', query: 'Find me an Italian restaurant in Cambridge', icon: LuUtensils },
-              { label: 'Museums', query: 'Looking for a museum to visit', icon: LuLandmark },
-              { label: 'Taxi Dispatch', query: 'I need to book a taxi', icon: LuCar },
+              { label: 'Hotels', query: 'I need a hotel in the centre', icon: LuBed },
+              { label: 'Dining', query: 'Find me an Italian restaurant in Cambridge', icon: LuUtensils },
+              { label: 'Attractions', query: 'Looking for a museum to visit', icon: LuLandmark },
+              { label: 'Transit', query: 'I need to book a taxi', icon: LuCar },
             ].map(s => {
               const Icon = s.icon;
               return (
@@ -1223,11 +1232,11 @@ function ChatPage(props) {
                     color: '#F8FAFC',
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    transition: 'all 0.15s',
+                    transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(245, 197, 24, 0.16)';
@@ -1261,76 +1270,46 @@ function ChatPage(props) {
               transition: 'border-color 0.2s',
             }}
           >
-            <input
-              type="file"
-              accept="audio/*"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                if (e.target.files[0]) sendMessage(`[Audio file: ${e.target.files[0].name}]`);
+            {/* Voice Input Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+                  alert('Web Speech recognition is supported on Chrome, Edge, and Safari.');
+                  return;
+                }
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SR();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                setIsRecording(true);
+                recognition.start();
+                recognition.onresult = (e) => {
+                  setIsRecording(false);
+                  sendMessage(e.results[0][0].transcript);
+                };
+                recognition.onerror = () => setIsRecording(false);
+                recognition.onend = () => setIsRecording(false);
               }}
-            />
+              title={isRecording ? 'Listening...' : 'Voice Input'}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: isRecording ? 'rgba(245, 197, 24, 0.25)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: isRecording ? '#F5C518' : '#F3E5AB',
+                flexShrink: 0,
+              }}
+            >
+              {isRecording ? <LuMicOff size={16} /> : <LuMic size={16} />}
+            </button>
 
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current.click()}
-                title="Attach audio recording"
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#F3E5AB',
-                }}
-              >
-                <LuPaperclip size={17} />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-                    alert('Web Speech API is supported on Chrome, Edge, and Safari.');
-                    return;
-                  }
-                  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                  const recognition = new SR();
-                  recognition.lang = 'en-US';
-                  recognition.interimResults = false;
-                  setIsRecording(true);
-                  recognition.start();
-                  recognition.onresult = (e) => {
-                    setIsRecording(false);
-                    sendMessage(e.results[0][0].transcript);
-                  };
-                  recognition.onerror = () => setIsRecording(false);
-                  recognition.onend = () => setIsRecording(false);
-                }}
-                title={isRecording ? 'Listening...' : 'Voice Input'}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  background: isRecording ? 'rgba(245, 197, 24, 0.25)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isRecording ? '#F5C518' : '#F3E5AB',
-                }}
-              >
-                {isRecording ? <LuMicOff size={17} /> : <LuMic size={17} />}
-              </button>
-            </div>
-
-            <div style={{ width: 1, height: 22, background: 'rgba(255, 255, 255, 0.1)', flexShrink: 0 }} />
+            <div style={{ width: 1, height: 20, background: 'rgba(255, 255, 255, 0.1)', flexShrink: 0 }} />
 
             <input
               type="text"
@@ -1350,46 +1329,6 @@ function ChatPage(props) {
               }}
             />
 
-            <div style={{ width: 1, height: 22, background: 'rgba(255, 255, 255, 0.1)', flexShrink: 0 }} />
-
-            {/* Quick Domain Triggers (Desktop) */}
-            {!isMobile && (
-              <div style={{ display: 'flex', gap: 2 }}>
-                <button
-                  type="button"
-                  onClick={() => sendMessage('I need a hotel')}
-                  title="Accommodations"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
-                >
-                  <LuBed size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => sendMessage('Find me a restaurant')}
-                  title="Dining"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
-                >
-                  <LuUtensils size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => sendMessage('What attractions are nearby')}
-                  title="Attractions"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
-                >
-                  <LuLandmark size={16} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => sendMessage('I need a taxi')}
-                  title="Transit"
-                  style={{ width: 32, height: 32, borderRadius: 6, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F3E5AB' }}
-                >
-                  <LuCar size={16} />
-                </button>
-              </div>
-            )}
-
             <button
               type="button"
               onClick={() => sendMessage(input)}
@@ -1400,7 +1339,7 @@ function ChatPage(props) {
                 height: 34,
                 borderRadius: 8,
                 border: 'none',
-                background: input.trim() ? 'linear-gradient(135deg, #FDE047, #F5C518)' : 'rgba(255, 255, 255, 0.05)',
+                background: input.trim() ? '#F5C518' : 'rgba(255, 255, 255, 0.05)',
                 cursor: input.trim() ? 'pointer' : 'default',
                 display: 'flex',
                 alignItems: 'center',
