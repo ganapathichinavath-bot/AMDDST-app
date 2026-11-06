@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import SplashScreen from './components/SplashScreen';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import ProfileSetup from './pages/ProfileSetup';
@@ -15,15 +14,8 @@ import NotFoundPage from './pages/NotFoundPage';
 import './index.css';
 
 function App() {
-  const [showSplash, setShowSplash] = useState(true);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 900);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -42,12 +34,9 @@ function App() {
         setCurrentUser(null);
         localStorage.removeItem('amddst_user');
       }
-      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
-
-  if (showSplash || authLoading) return <SplashScreen />;
 
   return (
     <Router>
