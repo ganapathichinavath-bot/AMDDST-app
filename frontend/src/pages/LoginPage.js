@@ -25,17 +25,21 @@ function LoginPage({ onLogin }) {
   const [loading, setLoading] = useState(false);
 
   const saveUserToFirestore = async (user) => {
-    const userRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || user.email?.split('@')[0] || 'User',
-        createdAt: new Date().toISOString(),
-        conversations: [],
-        bookings: []
-      });
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || user.email?.split('@')[0] || 'User',
+          createdAt: new Date().toISOString(),
+          conversations: [],
+          bookings: []
+        });
+      }
+    } catch (err) {
+      console.warn('[AMDDST] Firestore profile sync deferred:', err.message);
     }
     localStorage.setItem('amddst_user', JSON.stringify({
       uid: user.uid,

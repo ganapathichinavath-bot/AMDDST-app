@@ -21,9 +21,13 @@ function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists() && !userDoc.data().profileComplete) {
-          setShowProfileSetup(true);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists() && !userDoc.data().profileComplete) {
+            setShowProfileSetup(true);
+          }
+        } catch (firestoreErr) {
+          console.warn('[AMDDST Firebase] Firestore user doc check skipped:', firestoreErr.message);
         }
         localStorage.setItem('amddst_user', JSON.stringify({
           uid: user.uid,
